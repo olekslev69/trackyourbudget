@@ -10,6 +10,9 @@ in welche Kategorie** fließt.
 Alle Daten bleiben **lokal auf deinem Gerät** – keine Cloud, keine Anmeldung.
 Zum Sichern oder Übertragen gibt es Export/Import als JSON-Datei.
 
+Die Oberfläche gibt es auf **Deutsch und Englisch** – umschaltbar oben rechts
+(**DE / EN**); die Auswahl wird gemerkt.
+
 ## Funktionen
 
 - **Übersicht (Dashboard):** Einkommen, Fixkosten, **Sparen** (echte Sparquote) und

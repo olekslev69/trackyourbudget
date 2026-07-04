@@ -62,6 +62,7 @@ body {
 }
 .brand-name { font-weight: 700; font-size: 1.15rem; letter-spacing: -.01em; }
 .header-controls { display: flex; align-items: center; gap: 14px; }
+.lang-seg button { padding: 5px 11px; font-size: .8rem; }
 .view-filter { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--text-soft); }
 
 /* ---------- Tabs ---------- */

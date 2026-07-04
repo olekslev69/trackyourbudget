@@ -4,59 +4,255 @@
   "use strict";
 
   const STORAGE_KEY = "tyb_data_v1";
+  const LANG_KEY = "tyb_lang";
   const CURRENCY = "EUR";
+
+  /* ---------- Sprache / i18n ---------- */
+  const I18N = {
+    de: {
+      // Chrome / Navigation
+      view: "Ansicht", filter_by_person: "Nach Person filtern", all_combined: "Alle zusammen",
+      tab_uebersicht: "Übersicht", tab_einnahmen: "Einnahmen", tab_zahlungen: "Zahlungen",
+      tab_sparen: "Sparen", tab_kategorien: "Kategorien", tab_personen: "Personen", tab_daten: "Daten",
+      // Aktionen / generisch
+      cancel: "Abbrechen", save_btn: "Speichern", edit: "Bearbeiten", delete: "Löschen",
+      pause: "Pausieren", activate: "Aktivieren", saved: "Gespeichert", deleted: "Gelöscht",
+      name_required: "Bitte Name angeben", amount_required: "Bitte Betrag angeben",
+      save_failed: "Speichern fehlgeschlagen",
+      // Felder
+      label_name: "Bezeichnung", label_amount: "Betrag (€)", label_interval: "Intervall",
+      label_person: "Person", label_category: "Kategorie", label_next_due: "Nächste Fälligkeit (optional)",
+      label_note: "Notiz (optional)", label_name_plain: "Name", label_color: "Farbe", label_type: "Art",
+      // Intervalle
+      iv_woechentlich: "wöchentlich", iv_monatlich: "monatlich", iv_quartalsweise: "quartalsweise",
+      iv_halbjaehrlich: "halbjährlich", iv_jaehrlich: "jährlich",
+      // Spararten
+      art_etf: "ETF / Fonds", art_aktien: "Aktien", art_sparkonto: "Tagesgeld / Sparkonto",
+      art_altersvorsorge: "Altersvorsorge", art_krypto: "Krypto", art_sonstiges: "Sonstiges",
+      // Übersicht
+      per_month: "Monat", per_year: "Jahr",
+      amounts_note_month: "Alle Beträge pro Monat", amounts_note_year: "Alle Beträge pro Jahr",
+      income: "Einkommen", fixed_costs: "Fixkosten", savings: "Sparen", free_available: "Frei verfügbar",
+      after_costs_savings: "nach Kosten & Sparen", savings_rate: "Sparquote {pct}",
+      donut_month: "pro Monat", donut_year: "pro Jahr",
+      split_fixed_costs: "Aufteilung der Fixkosten", by_category: "Nach Kategorie",
+      pct_of_income: "{pct} vom Einkommen", pct_of_costs: "{pct} der Kosten",
+      no_payments_yet_title: "Noch keine Zahlungen erfasst.",
+      no_payments_yet_text: "Lege unter Zahlungen deine Verträge und Abos an, um die Aufteilung zu sehen.",
+      upcoming_due: "Demnächst fällig", per_person: "Pro Person",
+      per_person_sub: "Grundlage für spätere getrennte Budgets",
+      pp_costs: "Kosten", free_short: "Frei", no_category: "Ohne Kategorie",
+      // Fälligkeit
+      due_today: "heute fällig", due_tomorrow: "morgen fällig", due_in_days: "in {n} Tagen",
+      due_prefix: "fällig {date}",
+      // Einnahmen
+      income_sub: "Dein monatliches Einkommen — auch pro Person erfassbar.", add_income: "+ Einnahme",
+      no_income_title: "Noch keine Einnahmen.", no_income_text: "Trage z. B. dein Gehalt ein.",
+      per_month_slash: "/ Monat", new_income: "Neue Einnahme", edit_income: "Einnahme bearbeiten",
+      income_added: "Einnahme hinzugefügt", delete_income_confirm: "Diese Einnahme löschen?",
+      default_income_name: "Einnahme", ph_income: "z. B. Gehalt",
+      // Zahlungen
+      payments_title: "Zahlungen & Verträge", payments_sub: "Abos, Verträge und feste monatliche Ausgaben.",
+      add_payment: "+ Zahlung", no_payments_title: "Noch keine Zahlungen.",
+      no_payments_text: "Lege deinen ersten Vertrag oder ein Abo an.", all_categories: "Alle Kategorien",
+      sort_amount_desc: "Betrag absteigend", sort_amount_asc: "Betrag aufsteigend", sort_name: "Name (A–Z)",
+      search_ph: "Suchen …", reset: "Zurücksetzen",
+      count_payments: "{n} Zahlung(en)", sum_line: "{m}/Monat · {y}/Jahr (aktive)",
+      no_payments_filter: "Keine Zahlungen für diesen Filter.", tag_paused: "pausiert",
+      new_payment: "Neue Zahlung", edit_payment: "Zahlung bearbeiten", payment_added: "Zahlung hinzugefügt",
+      delete_payment_confirm: "Diese Zahlung löschen?", default_payment_name: "Zahlung",
+      ph_payment: "z. B. Netflix, Miete, Fitnessstudio", ph_note_contract: "z. B. Vertragsende 12/2026",
+      // Sparen
+      savings_title: "Sparen & Anlegen",
+      savings_sub: "Regelmäßige Sparraten – z. B. ETF-Sparpläne, Tagesgeld oder Altersvorsorge.",
+      add_savings: "+ Sparrate", no_savings_title: "Noch keine Sparraten.",
+      no_savings_text: "Lege z. B. deinen ETF-Sparplan an.", count_savings: "{n} Sparrate(n)",
+      new_savings: "Neue Sparrate", edit_savings: "Sparrate bearbeiten", savings_added: "Sparrate hinzugefügt",
+      delete_savings_confirm: "Diese Sparrate löschen?", default_savings_name: "Sparrate",
+      ph_savings: "z. B. MSCI World ETF", ph_note_depot: "z. B. Depot bei …",
+      // Kategorien
+      categories_sub: "Ordne deine Zahlungen thematisch — Farben erscheinen im Diagramm.",
+      add_category: "+ Kategorie", payment_one: "{n} Zahlung", payment_many: "{n} Zahlungen",
+      new_category: "Neue Kategorie", edit_category: "Kategorie bearbeiten",
+      category_added: "Kategorie hinzugefügt", min_one_category: "Mindestens eine Kategorie muss bleiben",
+      category_reassign_confirm: "Diese Kategorie hat {n} Zahlung(en). Sie werden zu {fallback} verschoben. Fortfahren?",
+      delete_category_confirm: "Diese Kategorie löschen?", ph_category: "z. B. Freizeit",
+      // Personen
+      people_sub: "Wer teilt sich das Budget? Grundlage für später getrennte Profile.",
+      add_person: "+ Person", person_counts: "{e} Einnahme(n) · {z} Zahlung(en)",
+      new_person: "Neue Person", edit_person: "Person bearbeiten", person_added: "Person hinzugefügt",
+      min_one_person: "Mindestens eine Person muss bleiben",
+      person_reassign_confirm: "Diese Person ist {n}× zugeordnet. Ihre Einträge werden {fallback} zugewiesen. Fortfahren?",
+      delete_person_confirm: "Diese Person löschen?", ph_person: "z. B. dein Name oder der deiner Frau",
+      // Daten
+      data_sub: "Alle Daten liegen lokal auf diesem Gerät. Sichere oder übertrage sie per Datei.",
+      backup_title: "Sichern & Übertragen (JSON)",
+      backup_text: "Vollständiges Backup als JSON-Datei – enthält alle Einnahmen, Zahlungen, Sparraten, Kategorien und Personen. Ideal zum Übertragen zwischen Handy und PC. Beim Import kannst du wählen: bestehende Daten ersetzen oder mit den importierten zusammenführen.",
+      export_json: " Export (JSON)", import_json: " Import (JSON)",
+      current_status: "Aktueller Stand", st_income: "Einnahmen", st_payments: "Zahlungen",
+      st_savings: "Sparraten", st_categories: "Kategorien", st_income_month: "Einkommen / Monat",
+      st_costs_month: "Fixkosten / Monat", st_savings_month: "Sparen / Monat",
+      reset_title: "Zurücksetzen",
+      reset_text: "Löscht alle Einnahmen, Zahlungen und Sparraten und stellt die Standardkategorien wieder her.",
+      reset_btn: "Alle Daten löschen",
+      reset_confirm: "Wirklich ALLE Daten löschen? Das kann nicht rückgängig gemacht werden.",
+      reset_done: "Zurückgesetzt",
+      export_done: "Export erstellt", export_failed: "Export fehlgeschlagen",
+      import_failed: "Import fehlgeschlagen", file_unreadable: "Datei konnte nicht gelesen werden",
+      file_label: "Datei", import_title: "Daten importieren",
+      import_question: "Wie sollen die importierten Daten übernommen werden?",
+      merge: "Zusammenführen", replace: "Ersetzen", merged: "Daten zusammengeführt", replaced: "Daten ersetzt",
+      // Standarddaten
+      seed_p_ich: "Ich", seed_p_partner: "Partnerin", seed_p_gemeinsam: "Gemeinsam",
+      seed_k_wohnen: "Wohnen & Miete", seed_k_versicherung: "Versicherungen", seed_k_sport: "Sport & Fitness",
+      seed_k_abos: "Abos & Streaming", seed_k_mobilitaet: "Mobilität & Auto", seed_k_telekom: "Telefon & Internet",
+      seed_k_lebensmittel: "Lebensmittel (pauschal)", seed_k_sonstiges: "Sonstiges",
+    },
+    en: {
+      view: "View", filter_by_person: "Filter by person", all_combined: "All combined",
+      tab_uebersicht: "Overview", tab_einnahmen: "Income", tab_zahlungen: "Payments",
+      tab_sparen: "Savings", tab_kategorien: "Categories", tab_personen: "People", tab_daten: "Data",
+      cancel: "Cancel", save_btn: "Save", edit: "Edit", delete: "Delete",
+      pause: "Pause", activate: "Activate", saved: "Saved", deleted: "Deleted",
+      name_required: "Please enter a name", amount_required: "Please enter an amount",
+      save_failed: "Saving failed",
+      label_name: "Label", label_amount: "Amount (€)", label_interval: "Interval",
+      label_person: "Person", label_category: "Category", label_next_due: "Next due date (optional)",
+      label_note: "Note (optional)", label_name_plain: "Name", label_color: "Color", label_type: "Type",
+      iv_woechentlich: "weekly", iv_monatlich: "monthly", iv_quartalsweise: "quarterly",
+      iv_halbjaehrlich: "half-yearly", iv_jaehrlich: "yearly",
+      art_etf: "ETF / Funds", art_aktien: "Stocks", art_sparkonto: "Savings account",
+      art_altersvorsorge: "Pension", art_krypto: "Crypto", art_sonstiges: "Other",
+      per_month: "Month", per_year: "Year",
+      amounts_note_month: "All amounts per month", amounts_note_year: "All amounts per year",
+      income: "Income", fixed_costs: "Fixed costs", savings: "Savings", free_available: "Available",
+      after_costs_savings: "after costs & savings", savings_rate: "Savings rate {pct}",
+      donut_month: "per month", donut_year: "per year",
+      split_fixed_costs: "Breakdown of fixed costs", by_category: "By category",
+      pct_of_income: "{pct} of income", pct_of_costs: "{pct} of costs",
+      no_payments_yet_title: "No payments yet.",
+      no_payments_yet_text: "Add your contracts and subscriptions under Payments to see the breakdown.",
+      upcoming_due: "Upcoming", per_person: "Per person",
+      per_person_sub: "Basis for separate budgets later",
+      pp_costs: "Costs", free_short: "Available", no_category: "No category",
+      due_today: "due today", due_tomorrow: "due tomorrow", due_in_days: "in {n} days",
+      due_prefix: "due {date}",
+      income_sub: "Your monthly income — also per person.", add_income: "+ Income",
+      no_income_title: "No income yet.", no_income_text: "Add your salary, for example.",
+      per_month_slash: "/ month", new_income: "New income", edit_income: "Edit income",
+      income_added: "Income added", delete_income_confirm: "Delete this income?",
+      default_income_name: "Income", ph_income: "e.g. Salary",
+      payments_title: "Payments & contracts", payments_sub: "Subscriptions, contracts and fixed monthly expenses.",
+      add_payment: "+ Payment", no_payments_title: "No payments yet.",
+      no_payments_text: "Add your first contract or subscription.", all_categories: "All categories",
+      sort_amount_desc: "Amount ↓", sort_amount_asc: "Amount ↑", sort_name: "Name (A–Z)",
+      search_ph: "Search …", reset: "Reset",
+      count_payments: "{n} payment(s)", sum_line: "{m}/month · {y}/year (active)",
+      no_payments_filter: "No payments for this filter.", tag_paused: "paused",
+      new_payment: "New payment", edit_payment: "Edit payment", payment_added: "Payment added",
+      delete_payment_confirm: "Delete this payment?", default_payment_name: "Payment",
+      ph_payment: "e.g. Netflix, rent, gym", ph_note_contract: "e.g. contract ends 12/2026",
+      savings_title: "Saving & investing",
+      savings_sub: "Recurring savings – e.g. ETF plans, savings accounts or pension.",
+      add_savings: "+ Savings", no_savings_title: "No savings yet.",
+      no_savings_text: "Add your ETF plan, for example.", count_savings: "{n} savings plan(s)",
+      new_savings: "New savings plan", edit_savings: "Edit savings plan", savings_added: "Savings plan added",
+      delete_savings_confirm: "Delete this savings plan?", default_savings_name: "Savings",
+      ph_savings: "e.g. MSCI World ETF", ph_note_depot: "e.g. broker …",
+      categories_sub: "Group your payments — colors appear in the chart.",
+      add_category: "+ Category", payment_one: "{n} payment", payment_many: "{n} payments",
+      new_category: "New category", edit_category: "Edit category",
+      category_added: "Category added", min_one_category: "At least one category must remain",
+      category_reassign_confirm: "This category has {n} payment(s). They will be moved to {fallback}. Continue?",
+      delete_category_confirm: "Delete this category?", ph_category: "e.g. Leisure",
+      people_sub: "Who shares the budget? Basis for separate profiles later.",
+      add_person: "+ Person", person_counts: "{e} income · {z} payment(s)",
+      new_person: "New person", edit_person: "Edit person", person_added: "Person added",
+      min_one_person: "At least one person must remain",
+      person_reassign_confirm: "This person is assigned {n}×. Their entries will be reassigned to {fallback}. Continue?",
+      delete_person_confirm: "Delete this person?", ph_person: "e.g. your name or your partner's",
+      data_sub: "All data is stored locally on this device. Back up or transfer it via file.",
+      backup_title: "Backup & transfer (JSON)",
+      backup_text: "Full backup as a JSON file – includes all income, payments, savings, categories and people. Ideal for transferring between phone and PC. On import you can choose: replace existing data or merge it with the imported data.",
+      export_json: " Export (JSON)", import_json: " Import (JSON)",
+      current_status: "Current status", st_income: "Income entries", st_payments: "Payments",
+      st_savings: "Savings plans", st_categories: "Categories", st_income_month: "Income / month",
+      st_costs_month: "Fixed costs / month", st_savings_month: "Savings / month",
+      reset_title: "Reset",
+      reset_text: "Deletes all income, payments and savings and restores the default categories.",
+      reset_btn: "Delete all data",
+      reset_confirm: "Really delete ALL data? This cannot be undone.",
+      reset_done: "Reset done",
+      export_done: "Export created", export_failed: "Export failed",
+      import_failed: "Import failed", file_unreadable: "The file could not be read",
+      file_label: "File", import_title: "Import data",
+      import_question: "How should the imported data be applied?",
+      merge: "Merge", replace: "Replace", merged: "Data merged", replaced: "Data replaced",
+      seed_p_ich: "Me", seed_p_partner: "Partner", seed_p_gemeinsam: "Shared",
+      seed_k_wohnen: "Housing & rent", seed_k_versicherung: "Insurance", seed_k_sport: "Sports & fitness",
+      seed_k_abos: "Subscriptions & streaming", seed_k_mobilitaet: "Mobility & car", seed_k_telekom: "Phone & internet",
+      seed_k_lebensmittel: "Groceries (lump sum)", seed_k_sonstiges: "Other",
+    },
+  };
+
+  let lang = pickLang();
+  function pickLang() {
+    try {
+      const stored = localStorage.getItem(LANG_KEY);
+      if (stored === "de" || stored === "en") return stored;
+    } catch (e) { /* ignore */ }
+    return (navigator.language || "de").toLowerCase().startsWith("de") ? "de" : "en";
+  }
+  function t(key, vars) {
+    let s = (I18N[lang] && I18N[lang][key]) || I18N.de[key] || key;
+    if (vars) for (const k in vars) s = s.replace("{" + k + "}", vars[k]);
+    return s;
+  }
 
   /* ---------- Intervalle: Umrechnung auf Monatsbetrag ---------- */
   const INTERVALS = {
-    woechentlich: { label: "wöchentlich", perMonth: 52 / 12 },
-    monatlich:    { label: "monatlich",   perMonth: 1 },
-    quartalsweise:{ label: "quartalsweise", perMonth: 1 / 3 },
-    halbjaehrlich:{ label: "halbjährlich", perMonth: 1 / 6 },
-    jaehrlich:    { label: "jährlich",    perMonth: 1 / 12 },
+    woechentlich: { perMonth: 52 / 12 },
+    monatlich: { perMonth: 1 },
+    quartalsweise: { perMonth: 1 / 3 },
+    halbjaehrlich: { perMonth: 1 / 6 },
+    jaehrlich: { perMonth: 1 / 12 },
   };
+  function intervalLabel(key) { return t("iv_" + key); }
 
   const PALETTE = [
     "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#3b82f6",
     "#ec4899", "#14b8a6", "#8b5cf6", "#f97316", "#64748b",
   ];
 
+  // Arten von Sparplänen/Anlagen (Keys; Anzeige über t)
+  const SPAR_ARTEN = ["etf", "aktien", "sparkonto", "altersvorsorge", "krypto", "sonstiges"];
+  function sparArtLabel(a) { return t("art_" + (SPAR_ARTEN.indexOf(a) >= 0 ? a : "sonstiges")); }
+  function sparArtOptions() { return SPAR_ARTEN.map((a) => [a, sparArtLabel(a)]); }
+
   /* ---------- Standarddaten für den ersten Start ---------- */
   function defaultData() {
     return {
       version: 1,
-      // Personen sind bewusst als Liste modelliert, damit später echte
-      // Profile mit getrennten Budgets ergänzt werden können.
       personen: [
-        { id: "p_ich", name: "Ich" },
-        { id: "p_partner", name: "Partnerin" },
-        { id: "p_gemeinsam", name: "Gemeinsam" },
+        { id: "p_ich", name: t("seed_p_ich") },
+        { id: "p_partner", name: t("seed_p_partner") },
+        { id: "p_gemeinsam", name: t("seed_p_gemeinsam") },
       ],
       kategorien: [
-        { id: "k_wohnen", name: "Wohnen & Miete", farbe: "#6366f1" },
-        { id: "k_versicherung", name: "Versicherungen", farbe: "#3b82f6" },
-        { id: "k_sport", name: "Sport & Fitness", farbe: "#10b981" },
-        { id: "k_abos", name: "Abos & Streaming", farbe: "#ec4899" },
-        { id: "k_mobilitaet", name: "Mobilität & Auto", farbe: "#f59e0b" },
-        { id: "k_telekom", name: "Telefon & Internet", farbe: "#14b8a6" },
-        { id: "k_lebensmittel", name: "Lebensmittel (pauschal)", farbe: "#f97316" },
-        { id: "k_sonstiges", name: "Sonstiges", farbe: "#64748b" },
+        { id: "k_wohnen", name: t("seed_k_wohnen"), farbe: "#6366f1" },
+        { id: "k_versicherung", name: t("seed_k_versicherung"), farbe: "#3b82f6" },
+        { id: "k_sport", name: t("seed_k_sport"), farbe: "#10b981" },
+        { id: "k_abos", name: t("seed_k_abos"), farbe: "#ec4899" },
+        { id: "k_mobilitaet", name: t("seed_k_mobilitaet"), farbe: "#f59e0b" },
+        { id: "k_telekom", name: t("seed_k_telekom"), farbe: "#14b8a6" },
+        { id: "k_lebensmittel", name: t("seed_k_lebensmittel"), farbe: "#f97316" },
+        { id: "k_sonstiges", name: t("seed_k_sonstiges"), farbe: "#64748b" },
       ],
       einnahmen: [],
       zahlungen: [],
       sparplaene: [],
     };
   }
-
-  // Arten von Sparplänen/Anlagen
-  const SPAR_ARTEN = [
-    ["etf", "ETF / Fonds"],
-    ["aktien", "Aktien"],
-    ["sparkonto", "Tagesgeld / Sparkonto"],
-    ["altersvorsorge", "Altersvorsorge"],
-    ["krypto", "Krypto"],
-    ["sonstiges", "Sonstiges"],
-  ];
-  const sparArtLabel = (a) => (SPAR_ARTEN.find((x) => x[0] === a) || SPAR_ARTEN[SPAR_ARTEN.length - 1])[1];
 
   /* ---------- State ---------- */
   let state = loadData();
@@ -93,7 +289,7 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
-      toast("Speichern fehlgeschlagen");
+      toast(t("save_failed"));
     }
   }
 
@@ -137,9 +333,22 @@
     return svg;
   }
 
-  const eur = new Intl.NumberFormat("de-DE", { style: "currency", currency: CURRENCY });
-  const fmt = (n) => eur.format(n || 0);
-  const fmtPct = (n) => (n * 100).toFixed(n < 0.1 ? 1 : 0) + " %";
+  /* ---------- Formatierung (sprachabhängig) ---------- */
+  const _nf = {}, _df = {};
+  function locale() { return lang === "de" ? "de-DE" : "en-GB"; }
+  function fmt(n) {
+    const l = locale();
+    if (!_nf[l]) _nf[l] = new Intl.NumberFormat(l, { style: "currency", currency: CURRENCY });
+    return _nf[l].format(n || 0);
+  }
+  function fmtPct(n) {
+    return (n * 100).toFixed(n < 0.1 ? 1 : 0) + (lang === "de" ? " %" : "%");
+  }
+  function dateFmtFn(d) {
+    const l = locale();
+    if (!_df[l]) _df[l] = new Intl.DateTimeFormat(l, { day: "2-digit", month: "2-digit", year: "numeric" });
+    return _df[l].format(d);
+  }
 
   function monthly(entry) {
     const iv = INTERVALS[entry.intervall] || INTERVALS.monatlich;
@@ -148,7 +357,6 @@
 
   /* ---------- Datum / Fälligkeiten ---------- */
   const MONTHS_PER_INTERVAL = { monatlich: 1, quartalsweise: 3, halbjaehrlich: 6, jaehrlich: 12 };
-  const dateFmt = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   function todayMidnight() {
     const d = new Date();
@@ -181,9 +389,9 @@
     return Math.round((d - todayMidnight()) / 86400000);
   }
   function faelligkeitText(days) {
-    if (days <= 0) return "heute fällig";
-    if (days === 1) return "morgen fällig";
-    return "in " + days + " Tagen";
+    if (days <= 0) return t("due_today");
+    if (days === 1) return t("due_tomorrow");
+    return t("due_in_days", { n: days });
   }
 
   function personName(id) {
@@ -199,11 +407,11 @@
   }
 
   function toast(msg) {
-    const t = $("#toast");
-    t.textContent = msg;
-    t.classList.add("show");
+    const el2 = $("#toast");
+    el2.textContent = msg;
+    el2.classList.add("show");
     clearTimeout(toast._t);
-    toast._t = setTimeout(() => t.classList.remove("show"), 2200);
+    toast._t = setTimeout(() => el2.classList.remove("show"), 2200);
   }
 
   /* ---------- Berechnungen ---------- */
@@ -225,7 +433,7 @@
         const k = kategorieById(id);
         return {
           id,
-          name: k ? k.name : "Ohne Kategorie",
+          name: k ? k.name : t("no_category"),
           farbe: k ? k.farbe : "#64748b",
           amount,
           pctIncome: income > 0 ? amount / income : 0,
@@ -238,18 +446,32 @@
   }
 
   /* ---------- Rendering: Navigation ---------- */
+  function localizeChrome() {
+    document.documentElement.lang = lang;
+    const tabKeys = {
+      uebersicht: "tab_uebersicht", einnahmen: "tab_einnahmen", zahlungen: "tab_zahlungen",
+      sparen: "tab_sparen", kategorien: "tab_kategorien", personen: "tab_personen", daten: "tab_daten",
+    };
+    document.querySelectorAll(".tab").forEach((tab) => { tab.textContent = t(tabKeys[tab.dataset.view] || tab.dataset.view); });
+    const vl = document.querySelector(".view-filter > span");
+    if (vl) vl.textContent = t("view");
+    const pf = $("#personFilter");
+    if (pf) pf.setAttribute("aria-label", t("filter_by_person"));
+  }
+
   function renderPersonFilter() {
     const sel = $("#personFilter");
     sel.innerHTML = "";
-    sel.appendChild(el("option", { value: "all" }, "Alle zusammen"));
+    sel.appendChild(el("option", { value: "all" }, t("all_combined")));
     for (const p of state.personen) sel.appendChild(el("option", { value: p.id }, p.name));
     sel.value = personFilter;
   }
 
   function render() {
+    localizeChrome();
     renderPersonFilter();
-    document.querySelectorAll(".tab").forEach((t) =>
-      t.classList.toggle("is-active", t.dataset.view === currentView)
+    document.querySelectorAll(".tab").forEach((tab) =>
+      tab.classList.toggle("is-active", tab.dataset.view === currentView)
     );
     const app = $("#app");
     app.innerHTML = "";
@@ -269,67 +491,66 @@
     const c = calc();
     const savingRate = c.income > 0 ? c.savings / c.income : 0; // echte Sparquote
     const f = period === "jahr" ? 12 : 1;               // Faktor Monat -> Jahr
-    const per = period === "jahr" ? "Jahr" : "Monat";
+    const per = period === "jahr" ? t("per_year") : t("per_month");
 
     // Umschalter Monat / Jahr
     root.appendChild(el("div", { class: "section-head", style: "margin-bottom:14px" },
-      el("div", {}, el("h2", { style: "font-size:1.15rem" }, "Übersicht"),
-        el("p", {}, "Alle Beträge " + (period === "jahr" ? "pro Jahr" : "pro Monat"))),
+      el("div", {}, el("h2", { style: "font-size:1.15rem" }, t("tab_uebersicht")),
+        el("p", {}, period === "jahr" ? t("amounts_note_year") : t("amounts_note_month"))),
       el("div", { class: "seg" },
-        el("button", { class: period === "monat" ? "active" : "", onclick: () => { period = "monat"; render(); } }, "Monat"),
-        el("button", { class: period === "jahr" ? "active" : "", onclick: () => { period = "jahr"; render(); } }, "Jahr"))
+        el("button", { class: period === "monat" ? "active" : "", onclick: () => { period = "monat"; render(); } }, t("per_month")),
+        el("button", { class: period === "jahr" ? "active" : "", onclick: () => { period = "jahr"; render(); } }, t("per_year")))
     ));
 
     root.appendChild(
       el("div", { class: "kpi-grid" },
-        kpiCard("Einkommen / " + per, fmt(c.income * f), "accent"),
-        kpiCard("Fixkosten / " + per, fmt(c.costs * f)),
-        kpiCard("Sparen / " + per, fmt(c.savings * f), "pos",
-          c.income > 0 ? "Sparquote " + fmtPct(savingRate) : ""),
-        kpiCard("Frei verfügbar", fmt(c.rest * f), c.rest >= 0 ? "" : "neg",
-          "nach Kosten & Sparen")
+        kpiCard(t("income") + " / " + per, fmt(c.income * f), "accent"),
+        kpiCard(t("fixed_costs") + " / " + per, fmt(c.costs * f)),
+        kpiCard(t("savings") + " / " + per, fmt(c.savings * f), "pos",
+          c.income > 0 ? t("savings_rate", { pct: fmtPct(savingRate) }) : ""),
+        kpiCard(t("free_available"), fmt(c.rest * f), c.rest >= 0 ? "" : "neg",
+          t("after_costs_savings"))
       )
     );
 
     renderFaelligkeiten(root);
 
     if (c.costs === 0) {
-      root.appendChild(emptyState("Noch keine Zahlungen erfasst.",
-        "Lege unter „Zahlungen“ deine Verträge und Abos an, um die Aufteilung zu sehen."));
+      root.appendChild(emptyState(t("no_payments_yet_title"), t("no_payments_yet_text")));
     } else {
       root.appendChild(
         el("div", { class: "dash-grid" },
           el("div", { class: "card donut-wrap" },
-            donut(c.catRows, c.costs, f, per),
-            el("div", { class: "hint" }, "Aufteilung der Fixkosten")
+            donut(c.catRows, c.costs, f, period === "jahr" ? t("donut_year") : t("donut_month")),
+            el("div", { class: "hint" }, t("split_fixed_costs"))
           ),
           el("div", { class: "card" },
-            el("div", { class: "section-head" }, el("h2", { style: "font-size:1.05rem" }, "Nach Kategorie")),
+            el("div", { class: "section-head" }, el("h2", { style: "font-size:1.05rem" }, t("by_category"))),
             el("div", { class: "cat-list" }, ...c.catRows.map((r) => catRow(r, c.income, f)))
           )
         )
       );
     }
 
-    // Pro-Person-Aufschlüsselung (nur wenn „Alle“ gewählt)
+    // Pro-Person-Aufschlüsselung (nur wenn "Alle" gewählt)
     if (personFilter === "all") {
       const cards = state.personen.map((p) => {
         const inc = state.einnahmen.filter((e) => e.person === p.id).reduce((s, e) => s + monthly(e), 0);
         const cost = state.zahlungen.filter((z) => z.aktiv !== false && z.person === p.id).reduce((s, z) => s + monthly(z), 0);
-        const save = state.sparplaene.filter((s) => s.aktiv !== false && s.person === p.id).reduce((s, sp) => s + monthly(sp), 0);
-        if (inc === 0 && cost === 0 && save === 0) return null;
+        const sav = state.sparplaene.filter((s) => s.aktiv !== false && s.person === p.id).reduce((s, sp) => s + monthly(sp), 0);
+        if (inc === 0 && cost === 0 && sav === 0) return null;
         return el("div", { class: "card person-card" },
           el("h4", {}, p.name),
-          el("div", { class: "line" }, el("span", {}, "Einkommen"), el("b", {}, fmt(inc * f))),
-          el("div", { class: "line" }, el("span", {}, "Kosten"), el("b", {}, fmt(cost * f))),
-          el("div", { class: "line" }, el("span", {}, "Sparen"), el("b", {}, fmt(save * f))),
-          el("div", { class: "line" }, el("span", {}, "Frei"), el("b", {}, fmt((inc - cost - save) * f)))
+          el("div", { class: "line" }, el("span", {}, t("income")), el("b", {}, fmt(inc * f))),
+          el("div", { class: "line" }, el("span", {}, t("pp_costs")), el("b", {}, fmt(cost * f))),
+          el("div", { class: "line" }, el("span", {}, t("savings")), el("b", {}, fmt(sav * f))),
+          el("div", { class: "line" }, el("span", {}, t("free_short")), el("b", {}, fmt((inc - cost - sav) * f)))
         );
       }).filter(Boolean);
       if (cards.length) {
         root.appendChild(el("div", { class: "section-head", style: "margin-top:26px" },
-          el("div", {}, el("h2", { style: "font-size:1.05rem" }, "Pro Person"),
-            el("p", {}, "Grundlage für spätere getrennte Budgets"))));
+          el("div", {}, el("h2", { style: "font-size:1.05rem" }, t("per_person")),
+            el("p", {}, t("per_person_sub")))));
         root.appendChild(el("div", { class: "person-cards" }, ...cards));
       }
     }
@@ -347,7 +568,7 @@
 
     root.appendChild(el("div", { class: "card", style: "margin-top:20px" },
       el("div", { class: "section-head", style: "margin-bottom:14px" },
-        el("h2", { style: "font-size:1.05rem" }, "Demnächst fällig")),
+        el("h2", { style: "font-size:1.05rem" }, t("upcoming_due"))),
       el("div", { class: "due-list" }, ...items.map(({ z, due }) => {
         const days = daysUntil(due);
         const k = kategorieById(z.kategorieId);
@@ -355,8 +576,8 @@
         return el("div", { class: "due-row" },
           el("span", { class: "dot", style: "background:" + (k ? k.farbe : "#64748b") }),
           el("div", { class: "due-main" },
-            el("div", { class: "due-name" }, z.bezeichnung || "Zahlung"),
-            el("div", { class: "meta" }, dateFmt.format(due) + " · " + (INTERVALS[z.intervall] || INTERVALS.monatlich).label)),
+            el("div", { class: "due-name" }, z.bezeichnung || t("default_payment_name")),
+            el("div", { class: "meta" }, dateFmtFn(due) + " · " + intervalLabel(z.intervall))),
           el("span", { class: "due-badge " + urg }, faelligkeitText(days)),
           el("span", { class: "due-amount" }, fmt(Number(z.betrag) || 0)));
       })))
@@ -378,12 +599,12 @@
       el("div", { class: "name" }, el("span", { class: "dot", style: "background:" + r.farbe }), r.name),
       el("div", { class: "amount" }, fmt(r.amount * f)),
       el("div", { class: "bar" }, el("span", { style: `width:${widthPct}%;background:${r.farbe}` })),
-      el("div", { class: "pct" }, income > 0 ? fmtPct(r.pctIncome) + " vom Einkommen" : fmtPct(r.pctCosts) + " der Kosten")
+      el("div", { class: "pct" }, income > 0 ? t("pct_of_income", { pct: fmtPct(r.pctIncome) }) : t("pct_of_costs", { pct: fmtPct(r.pctCosts) }))
     );
   }
 
   /* SVG-Donut-Diagramm */
-  function donut(rows, total, f, per) {
+  function donut(rows, total, f, centerLabel) {
     f = f || 1;
     const NS = "http://www.w3.org/2000/svg";
     const size = 210, cx = size / 2, cy = size / 2, r = 82, stroke = 30;
@@ -415,31 +636,31 @@
     return el("div", { class: "donut" }, svg,
       el("div", { class: "donut-center" },
         el("div", { class: "big" }, fmt(total * f)),
-        el("div", { class: "small" }, "pro " + (per || "Monat"))));
+        el("div", { class: "small" }, centerLabel || t("donut_month"))));
   }
 
   /* ---------- View: Einnahmen ---------- */
   function renderEinnahmen(root) {
-    root.appendChild(sectionHead("Einnahmen", "Dein monatliches Einkommen — auch pro Person erfassbar.",
-      el("button", { class: "btn primary", onclick: () => openEinnahmeModal() }, "+ Einnahme")));
+    root.appendChild(sectionHead(t("tab_einnahmen"), t("income_sub"),
+      el("button", { class: "btn primary", onclick: () => openEinnahmeModal() }, t("add_income"))));
 
     const list = state.einnahmen.filter(matchesPerson);
     if (!list.length) {
-      root.appendChild(emptyState("Noch keine Einnahmen.", "Trage z. B. dein Gehalt ein."));
+      root.appendChild(emptyState(t("no_income_title"), t("no_income_text")));
       return;
     }
     root.appendChild(el("div", { class: "list" }, ...list.map((e) =>
       el("div", { class: "item" },
         el("span", { class: "swatch", style: "background:var(--success)" }),
         el("div", { class: "main" },
-          el("div", { class: "title" }, e.bezeichnung || "Einnahme",
+          el("div", { class: "title" }, e.bezeichnung || t("default_income_name"),
             el("span", { class: "tag muted" }, personName(e.person))),
-          el("div", { class: "meta" }, INTERVALS[e.intervall].label)),
+          el("div", { class: "meta" }, intervalLabel(e.intervall))),
         el("div", { class: "value" }, fmt(monthly(e)),
-          el("small", {}, e.intervall !== "monatlich" ? fmt(e.betrag) + " " + INTERVALS[e.intervall].label : "/ Monat")),
+          el("small", {}, e.intervall !== "monatlich" ? fmt(e.betrag) + " " + intervalLabel(e.intervall) : t("per_month_slash"))),
         el("div", { class: "actions" },
-          el("button", { class: "btn ghost icon", title: "Bearbeiten", onclick: () => openEinnahmeModal(e) }, icon("edit")),
-          el("button", { class: "btn danger icon", title: "Löschen", onclick: () => removeEinnahme(e.id) }, icon("trash")))
+          el("button", { class: "btn ghost icon", title: t("edit"), onclick: () => openEinnahmeModal(e) }, icon("edit")),
+          el("button", { class: "btn danger icon", title: t("delete"), onclick: () => removeEinnahme(e.id) }, icon("trash")))
       )
     )));
   }
@@ -447,25 +668,25 @@
   function openEinnahmeModal(entry) {
     const isNew = !entry;
     const e = entry || { id: uid("e"), bezeichnung: "", betrag: "", intervall: "monatlich", person: state.personen[0].id };
-    openModal(isNew ? "Neue Einnahme" : "Einnahme bearbeiten", [
-      textField("bezeichnung", "Bezeichnung", e.bezeichnung, "z. B. Gehalt"),
+    openModal(isNew ? t("new_income") : t("edit_income"), [
+      textField("bezeichnung", t("label_name"), e.bezeichnung, t("ph_income")),
       el("div", { class: "field-row" },
-        numField("betrag", "Betrag (€)", e.betrag),
-        selectField("intervall", "Intervall", intervalOptions(), e.intervall)),
-      selectField("person", "Person", personOptions(), e.person),
+        numField("betrag", t("label_amount"), e.betrag),
+        selectField("intervall", t("label_interval"), intervalOptions(), e.intervall)),
+      selectField("person", t("label_person"), personOptions(), e.person),
     ], (vals) => {
-      if (!vals.betrag) { toast("Bitte Betrag angeben"); return false; }
-      const rec = { id: e.id, bezeichnung: vals.bezeichnung.trim() || "Einnahme", betrag: Number(vals.betrag), intervall: vals.intervall, person: vals.person };
+      if (!vals.betrag) { toast(t("amount_required")); return false; }
+      const rec = { id: e.id, bezeichnung: vals.bezeichnung.trim() || t("default_income_name"), betrag: Number(vals.betrag), intervall: vals.intervall, person: vals.person };
       const i = state.einnahmen.findIndex((x) => x.id === e.id);
       if (i >= 0) state.einnahmen[i] = rec; else state.einnahmen.push(rec);
-      save(); render(); toast(isNew ? "Einnahme hinzugefügt" : "Gespeichert");
+      save(); render(); toast(isNew ? t("income_added") : t("saved"));
     });
   }
 
   function removeEinnahme(id) {
-    if (!confirm("Diese Einnahme löschen?")) return;
+    if (!confirm(t("delete_income_confirm"))) return;
     state.einnahmen = state.einnahmen.filter((x) => x.id !== id);
-    save(); render(); toast("Gelöscht");
+    save(); render(); toast(t("deleted"));
   }
 
   /* ---------- View: Zahlungen ---------- */
@@ -482,7 +703,7 @@
     const sorters = {
       betrag_desc: (a, b) => monthly(b) - monthly(a),
       betrag_asc: (a, b) => monthly(a) - monthly(b),
-      name: (a, b) => (a.bezeichnung || "").localeCompare(b.bezeichnung || "", "de"),
+      name: (a, b) => (a.bezeichnung || "").localeCompare(b.bezeichnung || "", lang),
     };
     return list.slice().sort(sorters[zahlungFilter.sort] || sorters.betrag_desc);
   }
@@ -491,33 +712,33 @@
     if (zahlungFilter.kategorie !== "all" && !kategorieById(zahlungFilter.kategorie)) {
       zahlungFilter.kategorie = "all";
     }
-    root.appendChild(sectionHead("Zahlungen & Verträge", "Abos, Verträge und feste monatliche Ausgaben.",
-      el("button", { class: "btn primary", onclick: () => openZahlungModal() }, "+ Zahlung")));
+    root.appendChild(sectionHead(t("payments_title"), t("payments_sub"),
+      el("button", { class: "btn primary", onclick: () => openZahlungModal() }, t("add_payment"))));
 
     if (!state.zahlungen.filter(matchesPerson).length) {
-      root.appendChild(emptyState("Noch keine Zahlungen.", "Lege deinen ersten Vertrag oder ein Abo an."));
+      root.appendChild(emptyState(t("no_payments_title"), t("no_payments_text")));
       return;
     }
 
     // Filterleiste
     const katSelect = el("select", { onchange: (e) => { zahlungFilter.kategorie = e.target.value; paintZahlungList(); } },
-      el("option", { value: "all" }, "Alle Kategorien"),
+      el("option", { value: "all" }, t("all_categories")),
       ...state.kategorien.map((k) => {
         const o = el("option", { value: k.id }, k.name);
         if (k.id === zahlungFilter.kategorie) o.selected = true;
         return o;
       }));
     const sortSelect = el("select", { onchange: (e) => { zahlungFilter.sort = e.target.value; paintZahlungList(); } },
-      ...[["betrag_desc", "Betrag absteigend"], ["betrag_asc", "Betrag aufsteigend"], ["name", "Name (A–Z)"]].map(([v, l]) => {
+      ...[["betrag_desc", t("sort_amount_desc")], ["betrag_asc", t("sort_amount_asc")], ["name", t("sort_name")]].map(([v, l]) => {
         const o = el("option", { value: v }, l);
         if (v === zahlungFilter.sort) o.selected = true;
         return o;
       }));
-    const search = el("input", { type: "text", class: "search", placeholder: "Suchen …", value: zahlungFilter.suche,
+    const search = el("input", { type: "text", class: "search", placeholder: t("search_ph"), value: zahlungFilter.suche,
       oninput: (e) => { zahlungFilter.suche = e.target.value; paintZahlungList(); } });
 
     root.appendChild(el("div", { class: "filter-bar" }, search, katSelect, sortSelect,
-      el("button", { class: "btn ghost small", onclick: () => { zahlungFilter = { kategorie: "all", suche: "", sort: "betrag_desc" }; render(); } }, "Zurücksetzen")));
+      el("button", { class: "btn ghost small", onclick: () => { zahlungFilter = { kategorie: "all", suche: "", sort: "betrag_desc" }; render(); } }, t("reset"))));
 
     root.appendChild(el("p", { class: "filter-summary", id: "zahlungSummary" }));
     root.appendChild(el("div", { class: "list", id: "zahlungList" }));
@@ -531,12 +752,12 @@
     const sum = list.filter((z) => z.aktiv !== false).reduce((s, z) => s + monthly(z), 0);
     const summary = $("#zahlungSummary");
     if (summary) {
-      summary.textContent = `${list.length} Zahlung(en)` +
-        (list.length ? ` · ${fmt(sum)}/Monat · ${fmt(sum * 12)}/Jahr (aktive)` : "");
+      summary.textContent = t("count_payments", { n: list.length }) +
+        (list.length ? " · " + t("sum_line", { m: fmt(sum), y: fmt(sum * 12) }) : "");
     }
     container.innerHTML = "";
     if (!list.length) {
-      container.appendChild(el("div", { class: "empty" }, "Keine Zahlungen für diesen Filter."));
+      container.appendChild(el("div", { class: "empty" }, t("no_payments_filter")));
       return;
     }
     for (const z of list) {
@@ -546,20 +767,20 @@
       container.appendChild(el("div", { class: "item" + (z.aktiv === false ? " inactive" : "") },
         el("span", { class: "swatch", style: "background:" + (k ? k.farbe : "#64748b") }),
         el("div", { class: "main" },
-          el("div", { class: "title" }, z.bezeichnung || "Zahlung",
+          el("div", { class: "title" }, z.bezeichnung || t("default_payment_name"),
             k ? el("span", { class: "tag" }, k.name) : null,
-            z.aktiv === false ? el("span", { class: "tag muted" }, "pausiert") : null,
+            z.aktiv === false ? el("span", { class: "tag muted" }, t("tag_paused")) : null,
             due && dueDays <= 7 ? el("span", { class: "tag warn" }, faelligkeitText(dueDays)) : null,
             el("span", { class: "tag muted" }, personName(z.person))),
-          el("div", { class: "meta" }, INTERVALS[z.intervall].label
-            + (due ? " · fällig " + dateFmt.format(due) : "")
+          el("div", { class: "meta" }, intervalLabel(z.intervall)
+            + (due ? " · " + t("due_prefix", { date: dateFmtFn(due) }) : "")
             + (z.notiz ? " · " + z.notiz : ""))),
         el("div", { class: "value" }, fmt(monthly(z)),
-          el("small", {}, z.intervall !== "monatlich" ? fmt(z.betrag) + " " + INTERVALS[z.intervall].label : "/ Monat")),
+          el("small", {}, z.intervall !== "monatlich" ? fmt(z.betrag) + " " + intervalLabel(z.intervall) : t("per_month_slash"))),
         el("div", { class: "actions" },
-          el("button", { class: "btn ghost icon", title: z.aktiv === false ? "Aktivieren" : "Pausieren", onclick: () => toggleZahlung(z.id) }, icon(z.aktiv === false ? "play" : "pause")),
-          el("button", { class: "btn ghost icon", title: "Bearbeiten", onclick: () => openZahlungModal(z) }, icon("edit")),
-          el("button", { class: "btn danger icon", title: "Löschen", onclick: () => removeZahlung(z.id) }, icon("trash")))
+          el("button", { class: "btn ghost icon", title: z.aktiv === false ? t("activate") : t("pause"), onclick: () => toggleZahlung(z.id) }, icon(z.aktiv === false ? "play" : "pause")),
+          el("button", { class: "btn ghost icon", title: t("edit"), onclick: () => openZahlungModal(z) }, icon("edit")),
+          el("button", { class: "btn danger icon", title: t("delete"), onclick: () => removeZahlung(z.id) }, icon("trash")))
       ));
     }
   }
@@ -568,25 +789,25 @@
     const isNew = !entry;
     const z = entry || { id: uid("z"), bezeichnung: "", betrag: "", intervall: "monatlich",
       kategorieId: state.kategorien[0].id, person: state.personen[state.personen.length - 1].id, notiz: "", aktiv: true };
-    openModal(isNew ? "Neue Zahlung" : "Zahlung bearbeiten", [
-      textField("bezeichnung", "Bezeichnung", z.bezeichnung, "z. B. Netflix, Miete, Fitnessstudio"),
+    openModal(isNew ? t("new_payment") : t("edit_payment"), [
+      textField("bezeichnung", t("label_name"), z.bezeichnung, t("ph_payment")),
       el("div", { class: "field-row" },
-        numField("betrag", "Betrag (€)", z.betrag),
-        selectField("intervall", "Intervall", intervalOptions(), z.intervall)),
+        numField("betrag", t("label_amount"), z.betrag),
+        selectField("intervall", t("label_interval"), intervalOptions(), z.intervall)),
       el("div", { class: "field-row" },
-        selectField("kategorieId", "Kategorie", state.kategorien.map((k) => [k.id, k.name]), z.kategorieId),
-        selectField("person", "Person", personOptions(), z.person)),
+        selectField("kategorieId", t("label_category"), state.kategorien.map((k) => [k.id, k.name]), z.kategorieId),
+        selectField("person", t("label_person"), personOptions(), z.person)),
       el("div", { class: "field-row" },
-        dateField("faellig", "Nächste Fälligkeit (optional)", z.faellig),
-        textField("notiz", "Notiz (optional)", z.notiz, "z. B. Vertragsende 12/2026")),
+        dateField("faellig", t("label_next_due"), z.faellig),
+        textField("notiz", t("label_note"), z.notiz, t("ph_note_contract"))),
     ], (vals) => {
-      if (!vals.betrag) { toast("Bitte Betrag angeben"); return false; }
-      const rec = { id: z.id, bezeichnung: vals.bezeichnung.trim() || "Zahlung", betrag: Number(vals.betrag),
+      if (!vals.betrag) { toast(t("amount_required")); return false; }
+      const rec = { id: z.id, bezeichnung: vals.bezeichnung.trim() || t("default_payment_name"), betrag: Number(vals.betrag),
         intervall: vals.intervall, kategorieId: vals.kategorieId, person: vals.person, notiz: vals.notiz.trim(),
         faellig: vals.faellig || "", aktiv: z.aktiv !== false };
       const i = state.zahlungen.findIndex((x) => x.id === z.id);
       if (i >= 0) state.zahlungen[i] = rec; else state.zahlungen.push(rec);
-      save(); render(); toast(isNew ? "Zahlung hinzugefügt" : "Gespeichert");
+      save(); render(); toast(isNew ? t("payment_added") : t("saved"));
     });
   }
 
@@ -597,42 +818,41 @@
     save(); render();
   }
   function removeZahlung(id) {
-    if (!confirm("Diese Zahlung löschen?")) return;
+    if (!confirm(t("delete_payment_confirm"))) return;
     state.zahlungen = state.zahlungen.filter((x) => x.id !== id);
-    save(); render(); toast("Gelöscht");
+    save(); render(); toast(t("deleted"));
   }
 
   /* ---------- View: Sparen ---------- */
   function renderSparen(root) {
-    root.appendChild(sectionHead("Sparen & Anlegen",
-      "Regelmäßige Sparraten – z. B. ETF-Sparpläne, Tagesgeld oder Altersvorsorge.",
-      el("button", { class: "btn primary", onclick: () => openSparModal() }, "+ Sparrate")));
+    root.appendChild(sectionHead(t("savings_title"), t("savings_sub"),
+      el("button", { class: "btn primary", onclick: () => openSparModal() }, t("add_savings"))));
 
     const list = state.sparplaene.filter(matchesPerson);
     if (!list.length) {
-      root.appendChild(emptyState("Noch keine Sparraten.", "Lege z. B. deinen ETF-Sparplan an."));
+      root.appendChild(emptyState(t("no_savings_title"), t("no_savings_text")));
       return;
     }
     const total = list.filter((s) => s.aktiv !== false).reduce((s, sp) => s + monthly(sp), 0);
     root.appendChild(el("p", { class: "filter-summary" },
-      `${list.length} Sparrate(n) · ${fmt(total)}/Monat · ${fmt(total * 12)}/Jahr (aktive)`));
+      t("count_savings", { n: list.length }) + " · " + t("sum_line", { m: fmt(total), y: fmt(total * 12) })));
 
     root.appendChild(el("div", { class: "list" }, ...list
       .slice().sort((a, b) => monthly(b) - monthly(a)).map((sp) =>
         el("div", { class: "item" + (sp.aktiv === false ? " inactive" : "") },
           el("span", { class: "swatch", style: "background:var(--success)" }),
           el("div", { class: "main" },
-            el("div", { class: "title" }, sp.bezeichnung || "Sparrate",
+            el("div", { class: "title" }, sp.bezeichnung || t("default_savings_name"),
               el("span", { class: "tag" }, sparArtLabel(sp.art)),
-              sp.aktiv === false ? el("span", { class: "tag muted" }, "pausiert") : null,
+              sp.aktiv === false ? el("span", { class: "tag muted" }, t("tag_paused")) : null,
               el("span", { class: "tag muted" }, personName(sp.person))),
-            el("div", { class: "meta" }, INTERVALS[sp.intervall].label + (sp.notiz ? " · " + sp.notiz : ""))),
+            el("div", { class: "meta" }, intervalLabel(sp.intervall) + (sp.notiz ? " · " + sp.notiz : ""))),
           el("div", { class: "value" }, fmt(monthly(sp)),
-            el("small", {}, sp.intervall !== "monatlich" ? fmt(sp.betrag) + " " + INTERVALS[sp.intervall].label : "/ Monat")),
+            el("small", {}, sp.intervall !== "monatlich" ? fmt(sp.betrag) + " " + intervalLabel(sp.intervall) : t("per_month_slash"))),
           el("div", { class: "actions" },
-            el("button", { class: "btn ghost icon", title: sp.aktiv === false ? "Aktivieren" : "Pausieren", onclick: () => toggleSpar(sp.id) }, icon(sp.aktiv === false ? "play" : "pause")),
-            el("button", { class: "btn ghost icon", title: "Bearbeiten", onclick: () => openSparModal(sp) }, icon("edit")),
-            el("button", { class: "btn danger icon", title: "Löschen", onclick: () => removeSpar(sp.id) }, icon("trash")))
+            el("button", { class: "btn ghost icon", title: sp.aktiv === false ? t("activate") : t("pause"), onclick: () => toggleSpar(sp.id) }, icon(sp.aktiv === false ? "play" : "pause")),
+            el("button", { class: "btn ghost icon", title: t("edit"), onclick: () => openSparModal(sp) }, icon("edit")),
+            el("button", { class: "btn danger icon", title: t("delete"), onclick: () => removeSpar(sp.id) }, icon("trash")))
         ))));
   }
 
@@ -640,22 +860,22 @@
     const isNew = !entry;
     const sp = entry || { id: uid("s"), bezeichnung: "", betrag: "", intervall: "monatlich",
       art: "etf", person: state.personen[0].id, notiz: "", aktiv: true };
-    openModal(isNew ? "Neue Sparrate" : "Sparrate bearbeiten", [
-      textField("bezeichnung", "Bezeichnung", sp.bezeichnung, "z. B. MSCI World ETF"),
+    openModal(isNew ? t("new_savings") : t("edit_savings"), [
+      textField("bezeichnung", t("label_name"), sp.bezeichnung, t("ph_savings")),
       el("div", { class: "field-row" },
-        numField("betrag", "Betrag (€)", sp.betrag),
-        selectField("intervall", "Intervall", intervalOptions(), sp.intervall)),
+        numField("betrag", t("label_amount"), sp.betrag),
+        selectField("intervall", t("label_interval"), intervalOptions(), sp.intervall)),
       el("div", { class: "field-row" },
-        selectField("art", "Art", SPAR_ARTEN, sp.art),
-        selectField("person", "Person", personOptions(), sp.person)),
-      textField("notiz", "Notiz (optional)", sp.notiz, "z. B. Depot bei …"),
+        selectField("art", t("label_type"), sparArtOptions(), sp.art),
+        selectField("person", t("label_person"), personOptions(), sp.person)),
+      textField("notiz", t("label_note"), sp.notiz, t("ph_note_depot")),
     ], (vals) => {
-      if (!vals.betrag) { toast("Bitte Betrag angeben"); return false; }
-      const rec = { id: sp.id, bezeichnung: vals.bezeichnung.trim() || "Sparrate", betrag: Number(vals.betrag),
+      if (!vals.betrag) { toast(t("amount_required")); return false; }
+      const rec = { id: sp.id, bezeichnung: vals.bezeichnung.trim() || t("default_savings_name"), betrag: Number(vals.betrag),
         intervall: vals.intervall, art: vals.art, person: vals.person, notiz: vals.notiz.trim(), aktiv: sp.aktiv !== false };
       const i = state.sparplaene.findIndex((x) => x.id === sp.id);
       if (i >= 0) state.sparplaene[i] = rec; else state.sparplaene.push(rec);
-      save(); render(); toast(isNew ? "Sparrate hinzugefügt" : "Gespeichert");
+      save(); render(); toast(isNew ? t("savings_added") : t("saved"));
     });
   }
 
@@ -666,15 +886,15 @@
     save(); render();
   }
   function removeSpar(id) {
-    if (!confirm("Diese Sparrate löschen?")) return;
+    if (!confirm(t("delete_savings_confirm"))) return;
     state.sparplaene = state.sparplaene.filter((x) => x.id !== id);
-    save(); render(); toast("Gelöscht");
+    save(); render(); toast(t("deleted"));
   }
 
   /* ---------- View: Kategorien ---------- */
   function renderKategorien(root) {
-    root.appendChild(sectionHead("Kategorien", "Ordne deine Zahlungen thematisch — Farben erscheinen im Diagramm.",
-      el("button", { class: "btn primary", onclick: () => openKategorieModal() }, "+ Kategorie")));
+    root.appendChild(sectionHead(t("tab_kategorien"), t("categories_sub"),
+      el("button", { class: "btn primary", onclick: () => openKategorieModal() }, t("add_category"))));
 
     root.appendChild(el("div", { class: "list" }, ...state.kategorien.map((k) => {
       const count = state.zahlungen.filter((z) => z.kategorieId === k.id).length;
@@ -682,11 +902,11 @@
         el("span", { class: "swatch", style: "background:" + k.farbe }),
         el("div", { class: "main" },
           el("div", { class: "title" }, k.name),
-          el("div", { class: "meta" }, count + (count === 1 ? " Zahlung" : " Zahlungen"))),
+          el("div", { class: "meta" }, count === 1 ? t("payment_one", { n: count }) : t("payment_many", { n: count }))),
         el("div", { class: "value" }, ""),
         el("div", { class: "actions" },
-          el("button", { class: "btn ghost icon", title: "Bearbeiten", onclick: () => openKategorieModal(k) }, icon("edit")),
-          el("button", { class: "btn danger icon", title: "Löschen", onclick: () => removeKategorie(k.id) }, icon("trash")))
+          el("button", { class: "btn ghost icon", title: t("edit"), onclick: () => openKategorieModal(k) }, icon("edit")),
+          el("button", { class: "btn danger icon", title: t("delete"), onclick: () => removeKategorie(k.id) }, icon("trash")))
       );
     })));
   }
@@ -694,35 +914,35 @@
   function openKategorieModal(entry) {
     const isNew = !entry;
     const k = entry || { id: uid("k"), name: "", farbe: PALETTE[state.kategorien.length % PALETTE.length] };
-    openModal(isNew ? "Neue Kategorie" : "Kategorie bearbeiten", [
-      textField("name", "Name", k.name, "z. B. Freizeit"),
-      colorField("farbe", "Farbe", k.farbe),
+    openModal(isNew ? t("new_category") : t("edit_category"), [
+      textField("name", t("label_name_plain"), k.name, t("ph_category")),
+      colorField("farbe", t("label_color"), k.farbe),
     ], (vals) => {
-      if (!vals.name.trim()) { toast("Bitte Name angeben"); return false; }
+      if (!vals.name.trim()) { toast(t("name_required")); return false; }
       const rec = { id: k.id, name: vals.name.trim(), farbe: vals.farbe };
       const i = state.kategorien.findIndex((x) => x.id === k.id);
       if (i >= 0) state.kategorien[i] = rec; else state.kategorien.push(rec);
-      save(); render(); toast(isNew ? "Kategorie hinzugefügt" : "Gespeichert");
+      save(); render(); toast(isNew ? t("category_added") : t("saved"));
     });
   }
 
   function removeKategorie(id) {
+    if (state.kategorien.length <= 1) { toast(t("min_one_category")); return; }
     const count = state.zahlungen.filter((z) => z.kategorieId === id).length;
-    if (state.kategorien.length <= 1) { toast("Mindestens eine Kategorie muss bleiben"); return; }
-    const msg = count > 0
-      ? `Diese Kategorie hat ${count} Zahlung(en). Diese werden auf „Sonstiges“ verschoben. Fortfahren?`
-      : "Diese Kategorie löschen?";
-    if (!confirm(msg)) return;
     const fallback = state.kategorien.find((k) => k.id !== id);
+    const msg = count > 0
+      ? t("category_reassign_confirm", { n: count, fallback: fallback.name })
+      : t("delete_category_confirm");
+    if (!confirm(msg)) return;
     state.zahlungen.forEach((z) => { if (z.kategorieId === id) z.kategorieId = fallback.id; });
     state.kategorien = state.kategorien.filter((k) => k.id !== id);
-    save(); render(); toast("Gelöscht");
+    save(); render(); toast(t("deleted"));
   }
 
   /* ---------- View: Personen ---------- */
   function renderPersonen(root) {
-    root.appendChild(sectionHead("Personen", "Wer teilt sich das Budget? Grundlage für später getrennte Profile.",
-      el("button", { class: "btn primary", onclick: () => openPersonModal() }, "+ Person")));
+    root.appendChild(sectionHead(t("tab_personen"), t("people_sub"),
+      el("button", { class: "btn primary", onclick: () => openPersonModal() }, t("add_person"))));
 
     root.appendChild(el("div", { class: "list" }, ...state.personen.map((p) => {
       const einn = state.einnahmen.filter((e) => e.person === p.id).length;
@@ -731,11 +951,11 @@
         el("span", { class: "swatch", style: "background:var(--primary)" }),
         el("div", { class: "main" },
           el("div", { class: "title" }, p.name),
-          el("div", { class: "meta" }, `${einn} Einnahme(n) · ${zahl} Zahlung(en)`)),
+          el("div", { class: "meta" }, t("person_counts", { e: einn, z: zahl }))),
         el("div", { class: "value" }, ""),
         el("div", { class: "actions" },
-          el("button", { class: "btn ghost icon", title: "Bearbeiten", onclick: () => openPersonModal(p) }, icon("edit")),
-          el("button", { class: "btn danger icon", title: "Löschen", onclick: () => removePerson(p.id) }, icon("trash")))
+          el("button", { class: "btn ghost icon", title: t("edit"), onclick: () => openPersonModal(p) }, icon("edit")),
+          el("button", { class: "btn danger icon", title: t("delete"), onclick: () => removePerson(p.id) }, icon("trash")))
       );
     })));
   }
@@ -743,86 +963,86 @@
   function openPersonModal(entry) {
     const isNew = !entry;
     const p = entry || { id: uid("p"), name: "" };
-    openModal(isNew ? "Neue Person" : "Person bearbeiten", [
-      textField("name", "Name", p.name, "z. B. dein Name oder der deiner Frau"),
+    openModal(isNew ? t("new_person") : t("edit_person"), [
+      textField("name", t("label_name_plain"), p.name, t("ph_person")),
     ], (vals) => {
       const name = vals.name.trim();
-      if (!name) { toast("Bitte Name angeben"); return false; }
+      if (!name) { toast(t("name_required")); return false; }
       const rec = { id: p.id, name };
       const i = state.personen.findIndex((x) => x.id === p.id);
       if (i >= 0) state.personen[i] = rec; else state.personen.push(rec);
-      save(); render(); toast(isNew ? "Person hinzugefügt" : "Gespeichert");
+      save(); render(); toast(isNew ? t("person_added") : t("saved"));
     });
   }
 
   function removePerson(id) {
-    if (state.personen.length <= 1) { toast("Mindestens eine Person muss bleiben"); return; }
+    if (state.personen.length <= 1) { toast(t("min_one_person")); return; }
     const count = state.einnahmen.filter((e) => e.person === id).length +
       state.zahlungen.filter((z) => z.person === id).length;
     const fallback = state.personen.find((p) => p.id !== id);
     const msg = count > 0
-      ? `Diese Person ist ${count}× zugeordnet. Diese Einträge werden „${fallback.name}“ zugewiesen. Fortfahren?`
-      : "Diese Person löschen?";
+      ? t("person_reassign_confirm", { n: count, fallback: fallback.name })
+      : t("delete_person_confirm");
     if (!confirm(msg)) return;
     state.einnahmen.forEach((e) => { if (e.person === id) e.person = fallback.id; });
     state.zahlungen.forEach((z) => { if (z.person === id) z.person = fallback.id; });
+    state.sparplaene.forEach((s) => { if (s.person === id) s.person = fallback.id; });
     state.personen = state.personen.filter((p) => p.id !== id);
     if (personFilter === id) personFilter = "all";
-    save(); render(); toast("Gelöscht");
+    save(); render(); toast(t("deleted"));
   }
 
   /* ---------- View: Daten ---------- */
   function renderDaten(root) {
-    root.appendChild(sectionHead("Daten", "Alle Daten liegen lokal auf diesem Gerät. Sichere oder übertrage sie per Datei."));
+    root.appendChild(sectionHead(t("tab_daten"), t("data_sub")));
 
     root.appendChild(el("div", { class: "card" },
-      el("h3", { style: "margin:0 0 6px" }, "Sichern & Übertragen (JSON)"),
-      el("p", { class: "hint", style: "margin:0" },
-        "Vollständiges Backup als JSON-Datei – enthält alle Einnahmen, Zahlungen, Sparraten, Kategorien und Personen. Ideal zum Übertragen zwischen Handy und PC. Beim Import kannst du wählen: bestehende Daten ersetzen oder mit den importierten zusammenführen."),
+      el("h3", { style: "margin:0 0 6px" }, t("backup_title")),
+      el("p", { class: "hint", style: "margin:0" }, t("backup_text")),
       el("div", { class: "data-actions" },
-        el("button", { class: "btn primary", onclick: exportData }, icon("download"), " Export (JSON)"),
-        el("button", { class: "btn", onclick: startImport }, icon("upload"), " Import (JSON)"))
+        el("button", { class: "btn primary", onclick: exportData }, icon("download"), t("export_json")),
+        el("button", { class: "btn", onclick: startImport }, icon("upload"), t("import_json")))
     ));
 
     const c = calc();
     root.appendChild(el("div", { class: "card", style: "margin-top:18px" },
-      el("h3", { style: "margin:0 0 10px" }, "Aktueller Stand"),
+      el("h3", { style: "margin:0 0 10px" }, t("current_status")),
       el("div", { class: "person-card", style: "padding:0" },
-        el("div", { class: "line" }, el("span", {}, "Einnahmen"), el("b", {}, String(state.einnahmen.length))),
-        el("div", { class: "line" }, el("span", {}, "Zahlungen"), el("b", {}, String(state.zahlungen.length))),
-        el("div", { class: "line" }, el("span", {}, "Sparraten"), el("b", {}, String(state.sparplaene.length))),
-        el("div", { class: "line" }, el("span", {}, "Kategorien"), el("b", {}, String(state.kategorien.length))),
-        el("div", { class: "line" }, el("span", {}, "Einkommen / Monat"), el("b", {}, fmt(c.income))),
-        el("div", { class: "line" }, el("span", {}, "Fixkosten / Monat"), el("b", {}, fmt(c.costs))),
-        el("div", { class: "line" }, el("span", {}, "Sparen / Monat"), el("b", {}, fmt(c.savings))))
+        el("div", { class: "line" }, el("span", {}, t("st_income")), el("b", {}, String(state.einnahmen.length))),
+        el("div", { class: "line" }, el("span", {}, t("st_payments")), el("b", {}, String(state.zahlungen.length))),
+        el("div", { class: "line" }, el("span", {}, t("st_savings")), el("b", {}, String(state.sparplaene.length))),
+        el("div", { class: "line" }, el("span", {}, t("st_categories")), el("b", {}, String(state.kategorien.length))),
+        el("div", { class: "line" }, el("span", {}, t("st_income_month")), el("b", {}, fmt(c.income))),
+        el("div", { class: "line" }, el("span", {}, t("st_costs_month")), el("b", {}, fmt(c.costs))),
+        el("div", { class: "line" }, el("span", {}, t("st_savings_month")), el("b", {}, fmt(c.savings))))
     ));
 
     root.appendChild(el("div", { class: "card", style: "margin-top:18px" },
-      el("h3", { style: "margin:0 0 6px" }, "Zurücksetzen"),
-      el("p", { class: "hint", style: "margin:0" }, "Löscht alle Einnahmen, Zahlungen und Sparraten und stellt die Standardkategorien wieder her."),
+      el("h3", { style: "margin:0 0 6px" }, t("reset_title")),
+      el("p", { class: "hint", style: "margin:0" }, t("reset_text")),
       el("div", { class: "data-actions" },
-        el("button", { class: "btn danger", onclick: resetData }, "Alle Daten löschen"))
+        el("button", { class: "btn danger", onclick: resetData }, t("reset_btn")))
     ));
   }
 
   // Tauri stellt beim Desktop-Build native Datei-Dialoge bereit (window.__TAURI__).
   // Im normalen Browser wird auf Blob-Download / Datei-Auswahl zurückgegriffen.
   function tauriFs() {
-    const t = window.__TAURI__;
-    return t && t.dialog && t.fs ? t : null;
+    const t2 = window.__TAURI__;
+    return t2 && t2.dialog && t2.fs ? t2 : null;
   }
 
   // Text-Datei speichern (Tauri-Dialog oder Browser-Download)
   async function saveTextFile(defaultName, mime, text) {
     const ext = defaultName.split(".").pop();
-    const t = tauriFs();
-    if (t) {
+    const tf = tauriFs();
+    if (tf) {
       try {
-        const path = await t.dialog.save({ defaultPath: defaultName, filters: [{ name: ext.toUpperCase(), extensions: [ext] }] });
+        const path = await tf.dialog.save({ defaultPath: defaultName, filters: [{ name: ext.toUpperCase(), extensions: [ext] }] });
         if (!path) return false;
-        await t.fs.writeTextFile(path, text);
+        await tf.fs.writeTextFile(path, text);
         return true;
-      } catch (e) { console.error(e); toast("Export fehlgeschlagen"); return false; }
+      } catch (e) { console.error(e); toast(t("export_failed")); return false; }
     }
     const blob = new Blob([text], { type: mime });
     const url = URL.createObjectURL(blob);
@@ -834,13 +1054,13 @@
 
   // Text-Datei einlesen (Tauri-Dialog oder Browser-Dateiauswahl)
   async function openTextFile(extensions, cb) {
-    const t = tauriFs();
-    if (t) {
+    const tf = tauriFs();
+    if (tf) {
       try {
-        const path = await t.dialog.open({ multiple: false, filters: [{ name: "Datei", extensions }] });
+        const path = await tf.dialog.open({ multiple: false, filters: [{ name: t("file_label"), extensions }] });
         if (!path) return;
-        cb(await t.fs.readTextFile(path));
-      } catch (e) { console.error(e); toast("Import fehlgeschlagen"); }
+        cb(await tf.fs.readTextFile(path));
+      } catch (e) { console.error(e); toast(t("import_failed")); }
       return;
     }
     const input = el("input", { type: "file", accept: extensions.map((e) => "." + e).join(","), style: "display:none" });
@@ -858,7 +1078,7 @@
   /* ----- JSON: vollständiges Backup ----- */
   async function exportData() {
     if (await saveTextFile("sparblick-export.json", "application/json", JSON.stringify(state, null, 2))) {
-      toast("Export erstellt");
+      toast(t("export_done"));
     }
   }
   function startImport() {
@@ -869,13 +1089,13 @@
         if (!parsed || typeof parsed !== "object") throw new Error("ungültig");
         incoming = migrate(parsed);
       } catch (e) {
-        toast("Datei konnte nicht gelesen werden");
+        toast(t("file_unreadable"));
         return;
       }
-      openChoice("Daten importieren", "Wie sollen die importierten Daten übernommen werden?", [
-        { label: "Abbrechen", cls: "ghost" },
-        { label: "Zusammenführen", onClick: () => { state = mergeState(state, incoming); save(); render(); toast("Daten zusammengeführt"); } },
-        { label: "Ersetzen", cls: "primary", onClick: () => { state = incoming; save(); render(); toast("Daten ersetzt"); } },
+      openChoice(t("import_title"), t("import_question"), [
+        { label: t("cancel"), cls: "ghost" },
+        { label: t("merge"), onClick: () => { state = mergeState(state, incoming); save(); render(); toast(t("merged")); } },
+        { label: t("replace"), cls: "primary", onClick: () => { state = incoming; save(); render(); toast(t("replaced")); } },
       ]);
     });
   }
@@ -932,9 +1152,9 @@
   }
 
   function resetData() {
-    if (!confirm("Wirklich ALLE Daten löschen? Das kann nicht rückgängig gemacht werden.")) return;
+    if (!confirm(t("reset_confirm"))) return;
     state = defaultData();
-    save(); render(); toast("Zurückgesetzt");
+    save(); render(); toast(t("reset_done"));
   }
 
   /* ---------- Gemeinsame UI-Bausteine ---------- */
@@ -952,7 +1172,7 @@
   }
 
   function intervalOptions() {
-    return Object.entries(INTERVALS).map(([k, v]) => [k, v.label]);
+    return Object.keys(INTERVALS).map((k) => [k, intervalLabel(k)]);
   }
   function personOptions() {
     return state.personen.map((p) => [p.id, p.name]);
@@ -1005,8 +1225,8 @@
         el("div", { class: "modal-head" }, title),
         form,
         el("div", { class: "modal-foot" },
-          el("button", { type: "button", class: "btn ghost", onclick: closeModal }, "Abbrechen"),
-          el("button", { type: "submit", class: "btn primary", form: "__modalForm" }, "Speichern"))));
+          el("button", { type: "button", class: "btn ghost", onclick: closeModal }, t("cancel")),
+          el("button", { type: "submit", class: "btn primary", form: "__modalForm" }, t("save_btn")))));
     form.id = "__modalForm";
     form.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -1040,12 +1260,34 @@
     document.addEventListener("keydown", escClose);
   }
 
+  /* ---------- Sprachumschalter ---------- */
+  function buildLangToggle() {
+    const hc = document.querySelector(".header-controls");
+    if (!hc) return;
+    const seg = el("div", { class: "seg lang-seg" },
+      el("button", { "data-lang": "de", onclick: () => setLang("de") }, "DE"),
+      el("button", { "data-lang": "en", onclick: () => setLang("en") }, "EN"));
+    hc.insertBefore(seg, hc.firstChild);
+    updateLangToggle();
+  }
+  function updateLangToggle() {
+    document.querySelectorAll(".lang-seg button").forEach((b) => b.classList.toggle("active", b.dataset.lang === lang));
+  }
+  function setLang(l) {
+    if (l === lang) return;
+    lang = l;
+    try { localStorage.setItem(LANG_KEY, l); } catch (e) { /* ignore */ }
+    updateLangToggle();
+    render();
+  }
+
   /* ---------- Init ---------- */
   document.querySelectorAll(".tab").forEach((tab) =>
     tab.addEventListener("click", () => { currentView = tab.dataset.view; render(); })
   );
   $("#personFilter").addEventListener("change", (e) => { personFilter = e.target.value; render(); });
 
+  buildLangToggle();
   render();
 
   // PWA: Service Worker registrieren (nur im Browser über https/localhost;
