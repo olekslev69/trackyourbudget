@@ -1,0 +1,16 @@
+{
+  "name": "trackyourbudget",
+  "version": "0.1.0",
+  "description": "Lokaler Vertrags- und Budget-Tracker als Desktop-App",
+  "private": true,
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri",
+    "icons": "tauri icon app-icon.png",
+    "serve": "node scripts/serve.js"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}
