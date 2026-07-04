@@ -76,6 +76,29 @@ aktivieren; danach deployt der Workflow `.github/workflows/pages.yml` bei jedem 
 > Gerät. Auf einem neuen Gerät trägst du die Daten neu ein oder überträgst sie einmalig
 > per JSON-Export/Import.
 
+## Gemeinsam nutzen (Dropbox)
+
+Sparblick hat (bewusst) keinen eigenen Server und keine automatische Synchronisierung.
+Für ein **gemeinsames Familien-Budget** lässt sich aber eine einzelne JSON-Datei in einem
+**geteilten Dropbox-Ordner** (oder Drive/iCloud) manuell teilen:
+
+1. **Einrichten:** Eine Person macht **Daten → Export (JSON)** und legt die Datei als
+   `sparblick.json` in einen geteilten Ordner. Alle erhalten Zugriff.
+2. **Vor dem Eintragen (jedes Mal):** Datei öffnen → **Daten → Import (JSON) →
+   „Zusammenführen"** (holt den aktuellen Familienstand).
+3. **Eintragen / ändern.**
+4. **Danach:** **Daten → Export (JSON)** → die Datei im Ordner überschreiben (gleicher Name).
+
+**Goldene Regel:** immer **erst importieren (zusammenführen), dann exportieren** – und
+möglichst nicht gleichzeitig mit jemandem bearbeiten („einer nach dem anderen"). Lege ab
+und zu eine datierte Sicherungskopie an (z. B. `sparblick-2026-07.json`).
+
+> **Grenze:** Eine einzelne geteilte Datei ist „letzter gewinnt". Neue Einträge sammeln
+> sich beim Zusammenführen sicher, aber wenn zwei Personen **gleichzeitig denselben**
+> Eintrag ändern oder löschen, kann eine Änderung überschrieben werden. Für echten
+> automatischen Mehrgeräte-Sync (inkl. Änderungen/Löschungen) wäre eine spätere
+> Ausbaustufe nötig.
+
 ## Als Desktop-App bauen (Tauri)
 
 Die App ist ein [Tauri](https://tauri.app)-Projekt (Rust + Webview). Der
