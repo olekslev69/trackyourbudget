@@ -1,6 +1,6 @@
 # Sparblick
 
-[![CI](https://github.com/olekslev69/trackyourbudget/actions/workflows/ci.yml/badge.svg)](https://github.com/olekslev69/trackyourbudget/actions/workflows/ci.yml)
+[![CI](https://github.com/olekslev69/sparblick/actions/workflows/ci.yml/badge.svg)](https://github.com/olekslev69/sparblick/actions/workflows/ci.yml)
 
 Ein kleiner, lokaler **Vertrags- und Budget-Tracker** als Desktop-App.
 Trage dein Einkommen und deine monatlichen Zahlungen (Miete, Abos, Versicherungen,
