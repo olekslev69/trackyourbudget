@@ -1148,4 +1148,12 @@
   $("#personFilter").addEventListener("change", (e) => { personFilter = e.target.value; render(); });
 
   render();
+
+  // PWA: Service Worker registrieren (nur im Browser über https/localhost;
+  // im Desktop-Build/Tauri und unter file:// wird bewusst übersprungen).
+  if ("serviceWorker" in navigator && !window.__TAURI__ && location.protocol !== "file:") {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch((e) => console.warn("SW-Registrierung fehlgeschlagen:", e));
+    });
+  }
 })();

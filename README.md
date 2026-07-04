@@ -53,6 +53,28 @@ npm run serve
 
 Die Daten werden dabei im `localStorage` des Browsers gespeichert.
 
+## Am Handy nutzen (PWA)
+
+Sparblick ist eine **Progressive Web App**: Am Handy im Browser öffnen und über das
+Menü **„Zum Startbildschirm hinzufügen"** installieren – danach startet sie im Vollbild
+wie eine echte App und funktioniert **offline**.
+
+Dafür braucht das Handy eine **HTTPS-Adresse**. Dieses Repo veröffentlicht das Frontend
+automatisch über **GitHub Pages** unter:
+
+```
+https://olekslev69.github.io/sparblick/
+```
+
+Einmalige Einrichtung: in GitHub unter **Settings → Pages → Source: „GitHub Actions"**
+aktivieren; danach deployt der Workflow `.github/workflows/pages.yml` bei jedem Push auf
+`main`.
+
+> **Datenschutz:** Veröffentlicht wird nur die App selbst (der Code) – **keine Daten**.
+> Deine Einnahmen, Zahlungen und Sparraten bleiben ausschließlich lokal auf dem jeweiligen
+> Gerät. Auf einem neuen Gerät trägst du die Daten neu ein oder überträgst sie einmalig
+> per JSON-Export/Import.
+
 ## Als Desktop-App bauen (Tauri)
 
 Die App ist ein [Tauri](https://tauri.app)-Projekt (Rust + Webview). Der

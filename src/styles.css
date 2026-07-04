@@ -232,3 +232,31 @@ textarea { resize: vertical; min-height: 60px; }
 
 .hint { font-size: .82rem; color: var(--text-mute); }
 .data-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+
+/* ---------- Handy / kleine Bildschirme ---------- */
+@media (max-width: 560px) {
+  .app-header { padding: 12px 16px; }
+  .tabs { padding: 0 10px; }
+  .tab { padding: 12px 12px; }
+  .app-main { padding: 16px 12px 56px; }
+
+  .section-head { flex-wrap: wrap; }
+  .section-head h2 { font-size: 1.2rem; }
+  .kpi-value { font-size: 1.45rem; }
+  .kpi { padding: 15px 16px; }
+  .card { padding: 16px; }
+
+  /* Listeneinträge: Aktions-Buttons in eigene Zeile (besser tippbar) */
+  .item { grid-template-columns: auto 1fr auto; }
+  .item .actions { grid-column: 1 / -1; justify-content: flex-end; margin-top: 4px; }
+  .item .actions .btn.icon { padding: 8px 11px; }
+
+  /* Fälligkeiten: Betrag/Badge dürfen umbrechen */
+  .due-row { grid-template-columns: auto 1fr auto; }
+  .due-amount { grid-column: 2 / -1; text-align: right; }
+
+  /* Dialog-Felder untereinander */
+  .field-row { grid-template-columns: 1fr; }
+  .modal-body { padding: 18px 16px; }
+  .modal-head, .modal-foot { padding-left: 16px; padding-right: 16px; }
+}
