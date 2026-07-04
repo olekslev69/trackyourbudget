@@ -43,8 +43,20 @@
       ],
       einnahmen: [],
       zahlungen: [],
+      sparplaene: [],
     };
   }
+
+  // Arten von Sparplänen/Anlagen
+  const SPAR_ARTEN = [
+    ["etf", "ETF / Fonds"],
+    ["aktien", "Aktien"],
+    ["sparkonto", "Tagesgeld / Sparkonto"],
+    ["altersvorsorge", "Altersvorsorge"],
+    ["krypto", "Krypto"],
+    ["sonstiges", "Sonstiges"],
+  ];
+  const sparArtLabel = (a) => (SPAR_ARTEN.find((x) => x[0] === a) || SPAR_ARTEN[SPAR_ARTEN.length - 1])[1];
 
   /* ---------- State ---------- */
   let state = loadData();
@@ -73,6 +85,7 @@
       kategorien: Array.isArray(d.kategorien) && d.kategorien.length ? d.kategorien : base.kategorien,
       einnahmen: Array.isArray(d.einnahmen) ? d.einnahmen : [],
       zahlungen: Array.isArray(d.zahlungen) ? d.zahlungen : [],
+      sparplaene: Array.isArray(d.sparplaene) ? d.sparplaene : [],
     };
   }
 
@@ -133,6 +146,50 @@
     return (Number(entry.betrag) || 0) * iv.perMonth;
   }
 
+  /* ---------- Datum / Fälligkeiten ---------- */
+  const MONTHS_PER_INTERVAL = { monatlich: 1, quartalsweise: 3, halbjaehrlich: 6, jaehrlich: 12 };
+  const dateFmt = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+  function todayMidnight() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  function parseISO(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ""));
+    if (!m) return null;
+    const d = new Date(+m[1], +m[2] - 1, +m[3]);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function toISO(d) {
+    const p = (n) => String(n).padStart(2, "0");
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+  function advanceDate(d, intervall) {
+    const nd = new Date(d);
+    if (intervall === "woechentlich") nd.setDate(nd.getDate() + 7);
+    else nd.setMonth(nd.getMonth() + (MONTHS_PER_INTERVAL[intervall] || 1));
+    return nd;
+  }
+  // Nächste Fälligkeit >= heute (rollt vom gespeicherten Datum vorwärts)
+  function nextDue(entry) {
+    const base = parseISO(entry.faellig);
+    if (!base) return null;
+    const today = todayMidnight();
+    let d = base;
+    let guard = 0;
+    while (d < today && guard < 2000) { d = advanceDate(d, entry.intervall); guard++; }
+    return d;
+  }
+  function daysUntil(d) {
+    return Math.round((d - todayMidnight()) / 86400000);
+  }
+  function faelligkeitText(days) {
+    if (days <= 0) return "heute fällig";
+    if (days === 1) return "morgen fällig";
+    return "in " + days + " Tagen";
+  }
+
   function personName(id) {
     const p = state.personen.find((x) => x.id === id);
     return p ? p.name : "—";
@@ -157,8 +214,10 @@
   function calc() {
     const einnahmen = state.einnahmen.filter(matchesPerson);
     const zahlungen = state.zahlungen.filter((z) => z.aktiv !== false).filter(matchesPerson);
+    const sparplaene = state.sparplaene.filter((s) => s.aktiv !== false).filter(matchesPerson);
     const income = einnahmen.reduce((s, e) => s + monthly(e), 0);
     const costs = zahlungen.reduce((s, z) => s + monthly(z), 0);
+    const savings = sparplaene.reduce((s, sp) => s + monthly(sp), 0);
 
     const perCat = {};
     for (const z of zahlungen) {
@@ -179,7 +238,7 @@
       })
       .sort((a, b) => b.amount - a.amount);
 
-    return { income, costs, rest: income - costs, catRows };
+    return { income, costs, savings, rest: income - costs - savings, catRows };
   }
 
   /* ---------- Rendering: Navigation ---------- */
@@ -202,6 +261,7 @@
       uebersicht: renderUebersicht,
       einnahmen: renderEinnahmen,
       zahlungen: renderZahlungen,
+      sparen: renderSparen,
       kategorien: renderKategorien,
       personen: renderPersonen,
       daten: renderDaten,
@@ -211,7 +271,7 @@
   /* ---------- View: Übersicht ---------- */
   function renderUebersicht(root) {
     const c = calc();
-    const savingRate = c.income > 0 ? c.rest / c.income : 0;
+    const savingRate = c.income > 0 ? c.savings / c.income : 0; // echte Sparquote
     const f = period === "jahr" ? 12 : 1;               // Faktor Monat -> Jahr
     const per = period === "jahr" ? "Jahr" : "Monat";
 
@@ -228,11 +288,14 @@
       el("div", { class: "kpi-grid" },
         kpiCard("Einkommen / " + per, fmt(c.income * f), "accent"),
         kpiCard("Fixkosten / " + per, fmt(c.costs * f)),
-        kpiCard("Verbleibend", fmt(c.rest * f), c.rest >= 0 ? "pos" : "neg",
+        kpiCard("Sparen / " + per, fmt(c.savings * f), "pos",
           c.income > 0 ? "Sparquote " + fmtPct(savingRate) : ""),
-        kpiCard("Zahlungen aktiv", String(state.zahlungen.filter((z) => z.aktiv !== false).filter(matchesPerson).length))
+        kpiCard("Frei verfügbar", fmt(c.rest * f), c.rest >= 0 ? "" : "neg",
+          "nach Kosten & Sparen")
       )
     );
+
+    renderFaelligkeiten(root);
 
     if (c.costs === 0) {
       root.appendChild(emptyState("Noch keine Zahlungen erfasst.",
@@ -257,12 +320,14 @@
       const cards = state.personen.map((p) => {
         const inc = state.einnahmen.filter((e) => e.person === p.id).reduce((s, e) => s + monthly(e), 0);
         const cost = state.zahlungen.filter((z) => z.aktiv !== false && z.person === p.id).reduce((s, z) => s + monthly(z), 0);
-        if (inc === 0 && cost === 0) return null;
+        const save = state.sparplaene.filter((s) => s.aktiv !== false && s.person === p.id).reduce((s, sp) => s + monthly(sp), 0);
+        if (inc === 0 && cost === 0 && save === 0) return null;
         return el("div", { class: "card person-card" },
           el("h4", {}, p.name),
           el("div", { class: "line" }, el("span", {}, "Einkommen"), el("b", {}, fmt(inc * f))),
           el("div", { class: "line" }, el("span", {}, "Kosten"), el("b", {}, fmt(cost * f))),
-          el("div", { class: "line" }, el("span", {}, "Rest"), el("b", {}, fmt((inc - cost) * f)))
+          el("div", { class: "line" }, el("span", {}, "Sparen"), el("b", {}, fmt(save * f))),
+          el("div", { class: "line" }, el("span", {}, "Frei"), el("b", {}, fmt((inc - cost - save) * f)))
         );
       }).filter(Boolean);
       if (cards.length) {
@@ -272,6 +337,34 @@
         root.appendChild(el("div", { class: "person-cards" }, ...cards));
       }
     }
+  }
+
+  // Bereich "Demnächst fällig" (Zahlungen mit Fälligkeitsdatum)
+  function renderFaelligkeiten(root) {
+    const items = state.zahlungen
+      .filter((z) => z.aktiv !== false).filter(matchesPerson)
+      .map((z) => ({ z, due: nextDue(z) }))
+      .filter((x) => x.due)
+      .sort((a, b) => a.due - b.due)
+      .slice(0, 8);
+    if (!items.length) return;
+
+    root.appendChild(el("div", { class: "card", style: "margin-top:20px" },
+      el("div", { class: "section-head", style: "margin-bottom:14px" },
+        el("h2", { style: "font-size:1.05rem" }, "Demnächst fällig")),
+      el("div", { class: "due-list" }, ...items.map(({ z, due }) => {
+        const days = daysUntil(due);
+        const k = kategorieById(z.kategorieId);
+        const urg = days <= 3 ? "due-soon" : days <= 10 ? "due-near" : "";
+        return el("div", { class: "due-row" },
+          el("span", { class: "dot", style: "background:" + (k ? k.farbe : "#64748b") }),
+          el("div", { class: "due-main" },
+            el("div", { class: "due-name" }, z.bezeichnung || "Zahlung"),
+            el("div", { class: "meta" }, dateFmt.format(due) + " · " + (INTERVALS[z.intervall] || INTERVALS.monatlich).label)),
+          el("span", { class: "due-badge " + urg }, faelligkeitText(days)),
+          el("span", { class: "due-amount" }, fmt(Number(z.betrag) || 0)));
+      })))
+    );
   }
 
   function kpiCard(label, value, mod, sub) {
@@ -452,14 +545,19 @@
     }
     for (const z of list) {
       const k = kategorieById(z.kategorieId);
+      const due = z.aktiv !== false ? nextDue(z) : null;
+      const dueDays = due ? daysUntil(due) : null;
       container.appendChild(el("div", { class: "item" + (z.aktiv === false ? " inactive" : "") },
         el("span", { class: "swatch", style: "background:" + (k ? k.farbe : "#64748b") }),
         el("div", { class: "main" },
           el("div", { class: "title" }, z.bezeichnung || "Zahlung",
             k ? el("span", { class: "tag" }, k.name) : null,
             z.aktiv === false ? el("span", { class: "tag muted" }, "pausiert") : null,
+            due && dueDays <= 7 ? el("span", { class: "tag warn" }, faelligkeitText(dueDays)) : null,
             el("span", { class: "tag muted" }, personName(z.person))),
-          el("div", { class: "meta" }, INTERVALS[z.intervall].label + (z.notiz ? " · " + z.notiz : ""))),
+          el("div", { class: "meta" }, INTERVALS[z.intervall].label
+            + (due ? " · fällig " + dateFmt.format(due) : "")
+            + (z.notiz ? " · " + z.notiz : ""))),
         el("div", { class: "value" }, fmt(monthly(z)),
           el("small", {}, z.intervall !== "monatlich" ? fmt(z.betrag) + " " + INTERVALS[z.intervall].label : "/ Monat")),
         el("div", { class: "actions" },
@@ -482,12 +580,14 @@
       el("div", { class: "field-row" },
         selectField("kategorieId", "Kategorie", state.kategorien.map((k) => [k.id, k.name]), z.kategorieId),
         selectField("person", "Person", personOptions(), z.person)),
-      textField("notiz", "Notiz (optional)", z.notiz, "z. B. Vertragsende 12/2026"),
+      el("div", { class: "field-row" },
+        dateField("faellig", "Nächste Fälligkeit (optional)", z.faellig),
+        textField("notiz", "Notiz (optional)", z.notiz, "z. B. Vertragsende 12/2026")),
     ], (vals) => {
       if (!vals.betrag) { toast("Bitte Betrag angeben"); return false; }
       const rec = { id: z.id, bezeichnung: vals.bezeichnung.trim() || "Zahlung", betrag: Number(vals.betrag),
         intervall: vals.intervall, kategorieId: vals.kategorieId, person: vals.person, notiz: vals.notiz.trim(),
-        aktiv: z.aktiv !== false };
+        faellig: vals.faellig || "", aktiv: z.aktiv !== false };
       const i = state.zahlungen.findIndex((x) => x.id === z.id);
       if (i >= 0) state.zahlungen[i] = rec; else state.zahlungen.push(rec);
       save(); render(); toast(isNew ? "Zahlung hinzugefügt" : "Gespeichert");
@@ -503,6 +603,75 @@
   function removeZahlung(id) {
     if (!confirm("Diese Zahlung löschen?")) return;
     state.zahlungen = state.zahlungen.filter((x) => x.id !== id);
+    save(); render(); toast("Gelöscht");
+  }
+
+  /* ---------- View: Sparen ---------- */
+  function renderSparen(root) {
+    root.appendChild(sectionHead("Sparen & Anlegen",
+      "Regelmäßige Sparraten – z. B. ETF-Sparpläne, Tagesgeld oder Altersvorsorge.",
+      el("button", { class: "btn primary", onclick: () => openSparModal() }, "+ Sparrate")));
+
+    const list = state.sparplaene.filter(matchesPerson);
+    if (!list.length) {
+      root.appendChild(emptyState("Noch keine Sparraten.", "Lege z. B. deinen ETF-Sparplan an."));
+      return;
+    }
+    const total = list.filter((s) => s.aktiv !== false).reduce((s, sp) => s + monthly(sp), 0);
+    root.appendChild(el("p", { class: "filter-summary" },
+      `${list.length} Sparrate(n) · ${fmt(total)}/Monat · ${fmt(total * 12)}/Jahr (aktive)`));
+
+    root.appendChild(el("div", { class: "list" }, ...list
+      .slice().sort((a, b) => monthly(b) - monthly(a)).map((sp) =>
+        el("div", { class: "item" + (sp.aktiv === false ? " inactive" : "") },
+          el("span", { class: "swatch", style: "background:var(--success)" }),
+          el("div", { class: "main" },
+            el("div", { class: "title" }, sp.bezeichnung || "Sparrate",
+              el("span", { class: "tag" }, sparArtLabel(sp.art)),
+              sp.aktiv === false ? el("span", { class: "tag muted" }, "pausiert") : null,
+              el("span", { class: "tag muted" }, personName(sp.person))),
+            el("div", { class: "meta" }, INTERVALS[sp.intervall].label + (sp.notiz ? " · " + sp.notiz : ""))),
+          el("div", { class: "value" }, fmt(monthly(sp)),
+            el("small", {}, sp.intervall !== "monatlich" ? fmt(sp.betrag) + " " + INTERVALS[sp.intervall].label : "/ Monat")),
+          el("div", { class: "actions" },
+            el("button", { class: "btn ghost icon", title: sp.aktiv === false ? "Aktivieren" : "Pausieren", onclick: () => toggleSpar(sp.id) }, icon(sp.aktiv === false ? "play" : "pause")),
+            el("button", { class: "btn ghost icon", title: "Bearbeiten", onclick: () => openSparModal(sp) }, icon("edit")),
+            el("button", { class: "btn danger icon", title: "Löschen", onclick: () => removeSpar(sp.id) }, icon("trash")))
+        ))));
+  }
+
+  function openSparModal(entry) {
+    const isNew = !entry;
+    const sp = entry || { id: uid("s"), bezeichnung: "", betrag: "", intervall: "monatlich",
+      art: "etf", person: state.personen[0].id, notiz: "", aktiv: true };
+    openModal(isNew ? "Neue Sparrate" : "Sparrate bearbeiten", [
+      textField("bezeichnung", "Bezeichnung", sp.bezeichnung, "z. B. MSCI World ETF"),
+      el("div", { class: "field-row" },
+        numField("betrag", "Betrag (€)", sp.betrag),
+        selectField("intervall", "Intervall", intervalOptions(), sp.intervall)),
+      el("div", { class: "field-row" },
+        selectField("art", "Art", SPAR_ARTEN, sp.art),
+        selectField("person", "Person", personOptions(), sp.person)),
+      textField("notiz", "Notiz (optional)", sp.notiz, "z. B. Depot bei …"),
+    ], (vals) => {
+      if (!vals.betrag) { toast("Bitte Betrag angeben"); return false; }
+      const rec = { id: sp.id, bezeichnung: vals.bezeichnung.trim() || "Sparrate", betrag: Number(vals.betrag),
+        intervall: vals.intervall, art: vals.art, person: vals.person, notiz: vals.notiz.trim(), aktiv: sp.aktiv !== false };
+      const i = state.sparplaene.findIndex((x) => x.id === sp.id);
+      if (i >= 0) state.sparplaene[i] = rec; else state.sparplaene.push(rec);
+      save(); render(); toast(isNew ? "Sparrate hinzugefügt" : "Gespeichert");
+    });
+  }
+
+  function toggleSpar(id) {
+    const sp = state.sparplaene.find((x) => x.id === id);
+    if (!sp) return;
+    sp.aktiv = sp.aktiv === false;
+    save(); render();
+  }
+  function removeSpar(id) {
+    if (!confirm("Diese Sparrate löschen?")) return;
+    state.sparplaene = state.sparplaene.filter((x) => x.id !== id);
     save(); render(); toast("Gelöscht");
   }
 
@@ -635,14 +804,16 @@
       el("div", { class: "person-card", style: "padding:0" },
         el("div", { class: "line" }, el("span", {}, "Einnahmen"), el("b", {}, String(state.einnahmen.length))),
         el("div", { class: "line" }, el("span", {}, "Zahlungen"), el("b", {}, String(state.zahlungen.length))),
+        el("div", { class: "line" }, el("span", {}, "Sparraten"), el("b", {}, String(state.sparplaene.length))),
         el("div", { class: "line" }, el("span", {}, "Kategorien"), el("b", {}, String(state.kategorien.length))),
         el("div", { class: "line" }, el("span", {}, "Einkommen / Monat"), el("b", {}, fmt(c.income))),
-        el("div", { class: "line" }, el("span", {}, "Fixkosten / Monat"), el("b", {}, fmt(c.costs))))
+        el("div", { class: "line" }, el("span", {}, "Fixkosten / Monat"), el("b", {}, fmt(c.costs))),
+        el("div", { class: "line" }, el("span", {}, "Sparen / Monat"), el("b", {}, fmt(c.savings))))
     ));
 
     root.appendChild(el("div", { class: "card", style: "margin-top:18px" },
       el("h3", { style: "margin:0 0 6px" }, "Zurücksetzen"),
-      el("p", { class: "hint", style: "margin:0" }, "Löscht alle Einnahmen und Zahlungen und stellt die Standardkategorien wieder her."),
+      el("p", { class: "hint", style: "margin:0" }, "Löscht alle Einnahmen, Zahlungen und Sparraten und stellt die Standardkategorien wieder her."),
       el("div", { class: "data-actions" },
         el("button", { class: "btn danger", onclick: resetData }, "Alle Daten löschen"))
     ));
@@ -718,7 +889,7 @@
 
   /* ----- CSV: Zahlungen als Tabelle (Excel/Numbers) ----- */
   const CSV_SEP = ";"; // deutsches Excel-Standardtrennzeichen
-  const CSV_HEADERS = ["Bezeichnung", "Betrag", "Intervall", "Kategorie", "Person", "Notiz", "Aktiv"];
+  const CSV_HEADERS = ["Bezeichnung", "Betrag", "Intervall", "Kategorie", "Person", "Fällig", "Notiz", "Aktiv"];
 
   function csvCell(v) {
     const s = String(v == null ? "" : v);
@@ -729,12 +900,14 @@
     const lines = [CSV_HEADERS.join(CSV_SEP)];
     for (const z of state.zahlungen) {
       const k = kategorieById(z.kategorieId);
+      const due = parseISO(z.faellig);
       lines.push([
         z.bezeichnung || "",
         String(z.betrag).replace(".", ","),
         (INTERVALS[z.intervall] || INTERVALS.monatlich).label,
         k ? k.name : "",
         personName(z.person),
+        due ? dateFmt.format(due) : "",
         z.notiz || "",
         z.aktiv === false ? "nein" : "ja",
       ].map(csvCell).join(CSV_SEP));
@@ -777,6 +950,21 @@
     return "monatlich";
   }
 
+  // Datum aus CSV parsen (DD.MM.YYYY, DD.MM.YY oder YYYY-MM-DD) -> ISO oder ""
+  function parseDateCell(s) {
+    s = String(s || "").trim();
+    if (!s) return "";
+    let m = /^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/.exec(s);
+    if (m) {
+      let y = +m[3]; if (y < 100) y += 2000;
+      const d = new Date(y, +m[2] - 1, +m[1]);
+      return isNaN(d.getTime()) ? "" : toISO(d);
+    }
+    m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (m) { const d = new Date(+m[1], +m[2] - 1, +m[3]); return isNaN(d.getTime()) ? "" : toISO(d); }
+    return "";
+  }
+
   function findOrCreateKategorie(name) {
     const n = String(name || "").trim();
     if (!n) return state.kategorien[0].id;
@@ -809,7 +997,7 @@
       const sep = (rows[0].match(/;/g) || []).length >= (rows[0].match(/,/g) || []).length ? ";" : ",";
 
       // Spalten anhand der Kopfzeile zuordnen (sonst feste Reihenfolge)
-      const order = ["bezeichnung", "betrag", "intervall", "kategorie", "person", "notiz", "aktiv"];
+      const order = ["bezeichnung", "betrag", "intervall", "kategorie", "person", "fällig", "notiz", "aktiv"];
       let idx = {}; let start = 0;
       const head = parseCsvLine(rows[0], sep).map((c) => c.trim().toLowerCase());
       if (head.includes("betrag") || head.includes("bezeichnung")) {
@@ -837,6 +1025,7 @@
           intervall: intervalFromText(cell(cols, "intervall")),
           kategorieId: findOrCreateKategorie(cell(cols, "kategorie")),
           person: findOrCreatePerson(cell(cols, "person")),
+          faellig: parseDateCell(cell(cols, "fällig")),
           notiz: cell(cols, "notiz"),
           aktiv: !["nein", "no", "false", "0", "pausiert", "inaktiv"].includes(aktivTxt),
         });
@@ -893,6 +1082,11 @@
     return el("div", { class: "field" },
       el("label", { for: "f_" + name }, label),
       el("input", { type: "number", id: "f_" + name, name, value: value === "" || value == null ? "" : value, min: "0", step: "0.01", placeholder: "0,00" }));
+  }
+  function dateField(name, label, value) {
+    return el("div", { class: "field" },
+      el("label", { for: "f_" + name }, label),
+      el("input", { type: "date", id: "f_" + name, name, value: value || "" }));
   }
   function selectField(name, label, options, value) {
     const s = el("select", { id: "f_" + name, name });

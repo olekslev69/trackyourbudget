@@ -151,6 +151,7 @@ body {
 
 .tag { font-size: .72rem; padding: 2px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-weight: 600; }
 .tag.muted { background: var(--surface-2); color: var(--text-mute); }
+.tag.warn { background: rgba(245, 158, 11, .16); color: var(--warning); }
 
 .empty { text-align: center; padding: 46px 20px; color: var(--text-mute); }
 .empty svg { opacity: .5; margin-bottom: 8px; }
@@ -218,6 +219,16 @@ textarea { resize: vertical; min-height: 60px; }
 .filter-bar select, .filter-bar input { width: auto; }
 .filter-bar input.search { flex: 1 1 200px; min-width: 150px; }
 .filter-summary { font-size: .83rem; color: var(--text-mute); margin: 0 0 14px; }
+
+/* ---------- Fälligkeiten ---------- */
+.due-list { display: flex; flex-direction: column; gap: 12px; }
+.due-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 4px 12px; align-items: center; }
+.due-main { min-width: 0; }
+.due-name { font-weight: 600; }
+.due-badge { font-size: .75rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); color: var(--text-soft); white-space: nowrap; }
+.due-badge.due-near { background: rgba(245, 158, 11, .16); color: var(--warning); }
+.due-badge.due-soon { background: rgba(239, 68, 68, .15); color: var(--danger); }
+.due-amount { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 
 .hint { font-size: .82rem; color: var(--text-mute); }
 .data-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }

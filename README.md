@@ -12,16 +12,22 @@ Zum Sichern oder Übertragen gibt es Export/Import als JSON-Datei.
 
 ## Funktionen
 
-- **Übersicht (Dashboard):** Einkommen, Fixkosten, Verbleibendes und Sparquote;
-  Donut-Diagramm und Kategorie-Aufteilung mit Prozentanteil vom Einkommen.
-  Per **Umschalter Monat / Jahr** lassen sich alle Beträge auf Monats- oder
+- **Übersicht (Dashboard):** Einkommen, Fixkosten, **Sparen** (echte Sparquote) und
+  frei Verfügbares; Donut-Diagramm und Kategorie-Aufteilung mit Prozentanteil vom
+  Einkommen. Per **Umschalter Monat / Jahr** lassen sich alle Beträge auf Monats- oder
   Jahresbasis anzeigen (Jahresübersicht = was alle Verträge pro Jahr kosten).
+  Ein Bereich **„Demnächst fällig"** zeigt anstehende Zahlungen mit Datum und
+  farbiger Dringlichkeit.
 - **Einnahmen:** mehrere Einkommensquellen, auch pro Person.
 - **Zahlungen & Verträge:** Betrag, Intervall (wöchentlich, monatlich, quartals­weise,
-  halbjährlich, jährlich), Kategorie, Notiz. Alle Beträge werden automatisch auf einen
-  **Monatswert** umgerechnet. Zahlungen lassen sich pausieren. Die Liste ist per
-  **Suche, Kategorie und Sortierung filterbar**; eine Summenzeile zeigt Monats- und
-  Jahreskosten der Auswahl.
+  halbjährlich, jährlich), Kategorie, optionales **Fälligkeitsdatum** und Notiz. Alle
+  Beträge werden automatisch auf einen **Monatswert** umgerechnet; das nächste
+  Fälligkeitsdatum rollt automatisch anhand des Intervalls in die Zukunft. Zahlungen
+  lassen sich pausieren. Die Liste ist per **Suche, Kategorie und Sortierung filterbar**;
+  eine Summenzeile zeigt Monats- und Jahreskosten der Auswahl.
+- **Sparen & Anlegen:** regelmäßige Sparraten (z. B. ETF-Sparpläne, Tagesgeld,
+  Altersvorsorge, Krypto) mit Betrag, Intervall, Art und Person. Fließt als echte
+  Sparquote und „frei verfügbar" ins Dashboard ein.
 - **Kategorien:** frei anpassbar mit eigener Farbe.
 - **Personen / spätere getrennte Budgets:** Im Tab **Personen** lassen sich Personen
   anlegen, umbenennen und löschen (z. B. „Partnerin" durch den echten Namen ersetzen).
