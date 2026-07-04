@@ -38,15 +38,16 @@ Die Oberfläche gibt es auf **Deutsch und Englisch** – umschaltbar oben rechts
   oben rechts lässt sich alles zusammen oder pro Person betrachten – die Grundlage für
   später vollständig getrennte Budgets. Beim Löschen einer Person werden ihre Einträge
   automatisch einer anderen Person zugewiesen (keine Daten gehen verloren).
-- **Bank-Import (DKB):** Unter **Daten** lässt sich eine **Umsatzliste (CSV)** einlesen.
-  Die App erkennt automatisch **wiederkehrende Zahlungen** (Miete, Versicherungen, Strom,
-  Abos, Telefon …) und fasst alle **Lebensmitteleinkäufe** (inkl. Bäckereien) zu **einer
-  pauschalen Zahlung** zusammen. Umbuchungen aufs eigene oder **Gemeinschaftskonto** sowie
-  Investitionen werden **ignoriert**. Es wird nichts automatisch übernommen – jeder Vorschlag
-  wird in einer **Vorschau per Häkchen bestätigt**; bereits vorhandene Zahlungen werden
-  erkannt und nicht doppelt angelegt (sicher beim monatlichen Re-Import). Der Importer ist
-  so aufgebaut, dass sich **später weitere Banken** ergänzen lassen (siehe
-  [CONTRIBUTING.md](CONTRIBUTING.md)).
+- **Bank-Import (DKB & FYRST):** Unter **Daten** lässt sich eine **Umsatzliste (CSV)**
+  einlesen – aktuell werden die Formate von **DKB** und **FYRST** erkannt. Die App erkennt
+  automatisch **wiederkehrende Zahlungen** (Miete, Versicherungen inkl. Krankenkasse, Strom,
+  Abos, Telefon, Auto/KFZ, Software …) und fasst alle **Lebensmitteleinkäufe** (inkl.
+  Bäckereien) zu **einer pauschalen Zahlung** zusammen. Umbuchungen aufs eigene oder
+  **Gemeinschaftskonto**, **Steuern**, Investitionen und Bargeld-Abhebungen werden
+  **ignoriert**. Es wird nichts automatisch übernommen – jeder Vorschlag wird in einer
+  **Vorschau per Häkchen bestätigt**; bereits vorhandene Zahlungen werden erkannt und nicht
+  doppelt angelegt (sicher beim monatlichen Re-Import). Der Importer ist so aufgebaut, dass
+  sich **weitere Banken** leicht ergänzen lassen (siehe [CONTRIBUTING.md](CONTRIBUTING.md)).
 - **Daten:** vollständiges Backup als **JSON** (Export/Import) mit allen Einnahmen,
   Zahlungen, Sparraten, Kategorien und Personen. Beim Import wählbar: bestehende Daten
   **ersetzen** oder mit den importierten **zusammenführen** (ohne Duplikate) – ideal, um

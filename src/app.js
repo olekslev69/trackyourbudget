@@ -103,12 +103,12 @@
       import_question: "Wie sollen die importierten Daten übernommen werden?",
       merge: "Zusammenführen", replace: "Ersetzen", merged: "Daten zusammengeführt", replaced: "Daten ersetzt",
       // DKB-Import
-      dkb_card_title: "Import aus Bank (DKB)",
-      dkb_card_text: "Lies eine DKB-Umsatzliste (CSV) ein. Die App erkennt wiederkehrende Zahlungen und Lebensmittel automatisch – du bestätigst per Häkchen, bevor etwas hinzugefügt wird. Umbuchungen und Investitionen werden ignoriert.",
-      dkb_import_btn: " DKB-CSV importieren",
-      dkb_not_recognized: "Kein DKB-Umsatzformat erkannt",
+      dkb_card_title: "Import aus Bank (DKB, FYRST)",
+      dkb_card_text: "Lies eine Bank-Umsatzliste (CSV) ein – unterstützt werden DKB und FYRST. Die App erkennt wiederkehrende Zahlungen und Lebensmittel automatisch – du bestätigst per Häkchen, bevor etwas hinzugefügt wird. Umbuchungen, Steuern und Investitionen werden ignoriert.",
+      dkb_import_btn: " Umsatzliste (CSV) importieren",
+      dkb_not_recognized: "Kein bekanntes Bank-Format erkannt (DKB, FYRST)",
       dkb_nothing: "Keine wiederkehrenden Zahlungen oder Lebensmittel gefunden",
-      dkb_preview_title: "DKB-Import – Vorschau",
+      dkb_preview_title: "Bank-Import – Vorschau",
       dkb_preview_intro: "{n} Vorschläge erkannt · {ign} Umsätze ignoriert (Umbuchungen, Investitionen, Sonstiges).",
       dkb_for_all: "Für alle:",
       dkb_groceries: "Lebensmittel",
@@ -202,12 +202,12 @@
       file_label: "File", import_title: "Import data",
       import_question: "How should the imported data be applied?",
       merge: "Merge", replace: "Replace", merged: "Data merged", replaced: "Data replaced",
-      dkb_card_title: "Import from bank (DKB)",
-      dkb_card_text: "Read a DKB transaction list (CSV). The app detects recurring payments and groceries automatically – you confirm with checkboxes before anything is added. Transfers and investments are ignored.",
-      dkb_import_btn: " Import DKB CSV",
-      dkb_not_recognized: "No DKB transaction format recognized",
+      dkb_card_title: "Import from bank (DKB, FYRST)",
+      dkb_card_text: "Read a bank transaction list (CSV) – DKB and FYRST are supported. The app detects recurring payments and groceries automatically – you confirm with checkboxes before anything is added. Transfers, taxes and investments are ignored.",
+      dkb_import_btn: " Import transactions (CSV)",
+      dkb_not_recognized: "No known bank format recognized (DKB, FYRST)",
       dkb_nothing: "No recurring payments or groceries found",
-      dkb_preview_title: "DKB import – preview",
+      dkb_preview_title: "Bank import – preview",
       dkb_preview_intro: "{n} suggestions detected · {ign} transactions ignored (transfers, investments, other).",
       dkb_for_all: "For all:",
       dkb_groceries: "Groceries",
@@ -1192,10 +1192,12 @@
     { re: /supermarkt|\brewe\b|\baldi\b|\blidl\b|edeka|kaufland|\bpenny\b|\bnetto\b|rossmann|\bdm\b|b(ä|ae)cker|metro|alnatura|denns|tegut/i, grocery: true },
     { re: /\bmiete\b/i, catDefId: "k_wohnen", catDe: "Wohnen & Miete", catEn: "Housing & rent", name: "Miete" },
     { re: /octopus|energy|energie|\bstrom\b|stadtwerke|e\.?on\b|vattenfall|enbw|mainova/i, catDefId: null, catDe: "Strom & Energie", catEn: "Electricity & energy" },
-    { re: /versicher|signal iduna|baloise|allianz|\bhuk\b|\baxa\b|\bergo\b|debeka|generali|provinzial|rentenversicherung/i, catDefId: "k_versicherung", catDe: "Versicherungen", catEn: "Insurance" },
+    { re: /versicher|signal iduna|baloise|allianz|\bhuk\b|\baxa\b|\bergo\b|debeka|generali|provinzial|rentenversicherung|krankenkasse|krankenversicher|\bbarmer\b|\baok\b|\bdak\b/i, catDefId: "k_versicherung", catDe: "Versicherungen", catEn: "Insurance" },
     { re: /vodafone|telekom|\bo2\b|1&1|1und1|congstar|mobilcom|telefonica|pyur/i, catDefId: "k_telekom", catDe: "Telefon & Internet", catEn: "Phone & internet" },
-    { re: /netflix|spotify|disney|\bdazn\b|amazon prime|prime video|youtube premium|audible|\bsky\b/i, catDefId: "k_abos", catDe: "Abos & Streaming", catEn: "Subscriptions & streaming" },
+    { re: /netflix|spotify|disney|\bdazn\b|amazon prime|amznprime|prime video|youtube premium|audible|\bsky\b/i, catDefId: "k_abos", catDe: "Abos & Streaming", catEn: "Subscriptions & streaming" },
     { re: /fitness|mcfit|clever ?fit|urban sports|\bgym\b|fit\/one/i, catDefId: "k_sport", catDe: "Sport & Fitness", catEn: "Sports & fitness" },
+    { re: /\bkfz\b|leasing|autokredit|auto.?finanzierung|autohaus|\bsixt\b|\badac\b/i, catDefId: null, catDe: "Auto & Mobilität", catEn: "Car & mobility" },
+    { re: /lexware|\bdatev\b|microsoft 365|office 365|\badobe\b|dropbox|google workspace|jetbrains|\bnotion\b/i, catDefId: null, catDe: "Software & Tools", catEn: "Software & tools" },
   ];
 
   function splitCsvLine(line, sep) {
@@ -1319,8 +1321,55 @@
     },
   };
 
+  const fyrstParser = {
+    id: "fyrst",
+    label: "FYRST",
+    detect(lines) { return lines.some((l) => /Buchungstag/i.test(l) && /Umsatzart/i.test(l)); },
+    parse(lines) {
+      const headerIdx = lines.findIndex((l) => /Buchungstag/i.test(l) && /Umsatzart/i.test(l));
+      if (headerIdx < 0) return null;
+      const header = splitCsvLine(lines[headerIdx], ";").map((h) => h.trim());
+      const idx = {
+        emp: header.findIndex((h) => /beg(ü|ue)nstigter|auftraggeber/i.test(h)),
+        vz: header.findIndex((h) => /verwendungszweck/i.test(h)),
+        ums: header.findIndex((h) => /umsatzart/i.test(h)),
+        mand: header.findIndex((h) => /mandatsreferenz/i.test(h)),
+        betrag: header.findIndex((h) => /^betrag$/i.test(h)),
+      };
+      if (idx.betrag < 0 || idx.emp < 0) return null;
+
+      // Zeitraum aus dem Dateikopf, z. B. "1.6.2026 - 30.6.2026"
+      let period = "";
+      const zl = lines.slice(0, headerIdx).find((l) => /^\s*\d{1,2}\.\d{1,2}\.\d{2,4}\s*-\s*\d/.test(l));
+      if (zl) { const m = /(\d{1,2})\.(\d{1,2})\.(\d{2,4})/.exec(zl); if (m) period = monthLabel(+m[2], +m[3]); }
+
+      const rows = [];
+      for (let i = headerIdx + 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const r = splitCsvLine(lines[i], ";");
+        if (r.length < header.length - 2) continue; // Summenzeilen ("Kontostand;…") überspringen
+        const ums = idx.ums >= 0 ? (r[idx.ums] || "").toLowerCase() : "";
+        if (/auszahlung|einzahlung|bargeld/.test(ums)) continue; // Bargeld-Bewegungen sind keine Budgetposten
+        const amount = parseDeNum(r[idx.betrag]);
+        if (!isFinite(amount) || amount === 0) continue;
+        const vz = idx.vz >= 0 ? (r[idx.vz] || "").trim() : "";
+        const mand = idx.mand >= 0 ? (r[idx.mand] || "").trim() : "";
+        rows.push({
+          payee: (r[idx.emp] || "").trim(),
+          purpose: (vz + " " + mand).trim(), // Mandatsreferenz mitnehmen (enthält z. B. "KFZ …")
+          payer: "", // FYRST liefert keine eigene Kontoinhaber-Spalte
+          amount: Math.abs(amount),
+          expense: amount < 0,
+        });
+      }
+      const ownerTokens = deriveOwner(rows);
+      rows.forEach((row) => { row.self = isSelfTransfer(row.payee, ownerTokens); });
+      return { rows, period };
+    },
+  };
+
   // Registrierte Bank-Parser. Für eine neue Bank hier einen weiteren Parser eintragen.
-  const BANK_PARSERS = [dkbParser];
+  const BANK_PARSERS = [dkbParser, fyrstParser];
 
   // Wendet die (bank-unabhängigen) Kategorie-Regeln auf eine normalisierte
   // Buchungsliste an und fasst Lebensmittel zu einer Summe zusammen.

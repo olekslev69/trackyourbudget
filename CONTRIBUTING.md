@@ -72,6 +72,7 @@ Der Bank-Import in `src/app.js` ist bewusst zweigeteilt, damit neue Banken ohne
   `parse(lines, text)`, das `{ rows, period }` liefert. Jede `row` hat die Felder
   `payee` (Empfänger), `purpose` (Verwendungszweck), `payer` (Kontoinhaber\*in, für die
   Erkennung eigener/gemeinsamer Konten), `amount` (positiv) und `expense` (Ausgabe?).
+  Als Vorlage dienen die vorhandenen Parser `dkbParser` und `fyrstParser`.
 - **Klassifizierung** (`CATEGORY_RULES` + `classifyRows`): bank-unabhängig. Ordnet die
   Buchungen anhand von Empfänger/Verwendungszweck einer Kategorie zu, fasst Lebensmittel
   zusammen und ignoriert Umbuchungen aufs eigene/Gemeinschaftskonto.
