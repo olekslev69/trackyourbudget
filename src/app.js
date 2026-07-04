@@ -161,10 +161,6 @@
     const d = new Date(+m[1], +m[2] - 1, +m[3]);
     return isNaN(d.getTime()) ? null : d;
   }
-  function toISO(d) {
-    const p = (n) => String(n).padStart(2, "0");
-    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
-  }
   function advanceDate(d, intervall) {
     const nd = new Date(d);
     if (intervall === "woechentlich") nd.setDate(nd.getDate() + 7);
@@ -782,20 +778,10 @@
     root.appendChild(el("div", { class: "card" },
       el("h3", { style: "margin:0 0 6px" }, "Sichern & Übertragen (JSON)"),
       el("p", { class: "hint", style: "margin:0" },
-        "Vollständiges Backup als JSON-Datei (Einnahmen, Zahlungen, Kategorien, Personen). Beim Import werden die aktuellen Daten ersetzt."),
+        "Vollständiges Backup als JSON-Datei – enthält alle Einnahmen, Zahlungen, Sparraten, Kategorien und Personen. Ideal zum Übertragen zwischen Handy und PC. Beim Import kannst du wählen: bestehende Daten ersetzen oder mit den importierten zusammenführen."),
       el("div", { class: "data-actions" },
         el("button", { class: "btn primary", onclick: exportData }, icon("download"), " Export (JSON)"),
         el("button", { class: "btn", onclick: startImport }, icon("upload"), " Import (JSON)"))
-    ));
-
-    root.appendChild(el("div", { class: "card", style: "margin-top:18px" },
-      el("h3", { style: "margin:0 0 6px" }, "Zahlungen als Tabelle (CSV)"),
-      el("p", { class: "hint", style: "margin:0" },
-        "Zahlungen als CSV für Excel/Numbers exportieren – oder eine Tabelle importieren (wird zu den bestehenden Zahlungen hinzugefügt). Spalten: " +
-        CSV_HEADERS.join(", ") + ". Unbekannte Kategorien/Personen werden automatisch angelegt."),
-      el("div", { class: "data-actions" },
-        el("button", { class: "btn", onclick: exportZahlungenCSV }, icon("download"), " Zahlungen-Export (CSV)"),
-        el("button", { class: "btn", onclick: startImportCSV }, icon("upload"), " Zahlungen-Import (CSV)"))
     ));
 
     const c = calc();
@@ -877,173 +863,72 @@
   }
   function startImport() {
     openTextFile(["json"], (text) => {
+      let incoming;
       try {
         const parsed = JSON.parse(text);
         if (!parsed || typeof parsed !== "object") throw new Error("ungültig");
-        if (!confirm("Import ersetzt die aktuellen Daten. Fortfahren?")) return;
-        state = migrate(parsed);
-        save(); render(); toast("Import erfolgreich");
-      } catch (e) { toast("Datei konnte nicht gelesen werden"); }
+        incoming = migrate(parsed);
+      } catch (e) {
+        toast("Datei konnte nicht gelesen werden");
+        return;
+      }
+      openChoice("Daten importieren", "Wie sollen die importierten Daten übernommen werden?", [
+        { label: "Abbrechen", cls: "ghost" },
+        { label: "Zusammenführen", onClick: () => { state = mergeState(state, incoming); save(); render(); toast("Daten zusammengeführt"); } },
+        { label: "Ersetzen", cls: "primary", onClick: () => { state = incoming; save(); render(); toast("Daten ersetzt"); } },
+      ]);
     });
   }
 
-  /* ----- CSV: Zahlungen als Tabelle (Excel/Numbers) ----- */
-  const CSV_SEP = ";"; // deutsches Excel-Standardtrennzeichen
-  const CSV_HEADERS = ["Bezeichnung", "Betrag", "Intervall", "Kategorie", "Person", "Fällig", "Notiz", "Aktiv"];
+  // Importierte Daten mit den bestehenden zusammenführen (ohne Duplikate):
+  // Personen/Kategorien werden über den Namen abgeglichen, Einträge über ihre id.
+  function mergeState(current, incoming) {
+    const result = {
+      version: 1,
+      personen: current.personen.slice(),
+      kategorien: current.kategorien.slice(),
+      einnahmen: current.einnahmen.slice(),
+      zahlungen: current.zahlungen.slice(),
+      sparplaene: current.sparplaene.slice(),
+    };
 
-  function csvCell(v) {
-    const s = String(v == null ? "" : v);
-    return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  }
-
-  async function exportZahlungenCSV() {
-    const lines = [CSV_HEADERS.join(CSV_SEP)];
-    for (const z of state.zahlungen) {
-      const k = kategorieById(z.kategorieId);
-      const due = parseISO(z.faellig);
-      lines.push([
-        z.bezeichnung || "",
-        String(z.betrag).replace(".", ","),
-        (INTERVALS[z.intervall] || INTERVALS.monatlich).label,
-        k ? k.name : "",
-        personName(z.person),
-        due ? dateFmt.format(due) : "",
-        z.notiz || "",
-        z.aktiv === false ? "nein" : "ja",
-      ].map(csvCell).join(CSV_SEP));
+    const personIdMap = {}; // id aus Import -> gültige id im Ergebnis
+    for (const p of incoming.personen) {
+      const existing = result.personen.find((x) => x.name.toLowerCase() === p.name.toLowerCase());
+      if (existing) { personIdMap[p.id] = existing.id; continue; }
+      let id = p.id;
+      if (result.personen.some((x) => x.id === id)) id = uid("p");
+      result.personen.push({ id, name: p.name });
+      personIdMap[p.id] = id;
     }
-    // BOM, damit Excel UTF-8 (Umlaute) korrekt erkennt
-    if (await saveTextFile("zahlungen.csv", "text/csv;charset=utf-8", "﻿" + lines.join("\r\n"))) {
-      toast(state.zahlungen.length + " Zahlung(en) exportiert");
+
+    const katIdMap = {};
+    for (const k of incoming.kategorien) {
+      const existing = result.kategorien.find((x) => x.name.toLowerCase() === k.name.toLowerCase());
+      if (existing) { katIdMap[k.id] = existing.id; continue; }
+      let id = k.id;
+      if (result.kategorien.some((x) => x.id === id)) id = uid("k");
+      result.kategorien.push({ id, name: k.name, farbe: k.farbe });
+      katIdMap[k.id] = id;
     }
-  }
 
-  // Eine CSV-Zeile in Felder zerlegen (respektiert Anführungszeichen)
-  function parseCsvLine(line, sep) {
-    const out = []; let cur = ""; let inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (inQ) {
-        if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else inQ = false; }
-        else cur += c;
-      } else if (c === '"') inQ = true;
-      else if (c === sep) { out.push(cur); cur = ""; }
-      else cur += c;
-    }
-    out.push(cur);
-    return out;
-  }
-
-  function parseBetrag(s) {
-    s = String(s || "").replace(/[€\s]/g, "");
-    if (!s) return NaN;
-    if (s.includes(",") && s.includes(".")) s = s.replace(/\./g, "").replace(",", ".");
-    else if (s.includes(",")) s = s.replace(",", ".");
-    return Number(s);
-  }
-
-  function intervalFromText(s) {
-    const t = String(s || "").trim().toLowerCase();
-    for (const [key, v] of Object.entries(INTERVALS)) {
-      if (t === key || t === v.label.toLowerCase()) return key;
-    }
-    return "monatlich";
-  }
-
-  // Datum aus CSV parsen (DD.MM.YYYY, DD.MM.YY oder YYYY-MM-DD) -> ISO oder ""
-  function parseDateCell(s) {
-    s = String(s || "").trim();
-    if (!s) return "";
-    let m = /^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/.exec(s);
-    if (m) {
-      let y = +m[3]; if (y < 100) y += 2000;
-      const d = new Date(y, +m[2] - 1, +m[1]);
-      return isNaN(d.getTime()) ? "" : toISO(d);
-    }
-    m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-    if (m) { const d = new Date(+m[1], +m[2] - 1, +m[3]); return isNaN(d.getTime()) ? "" : toISO(d); }
-    return "";
-  }
-
-  function findOrCreateKategorie(name) {
-    const n = String(name || "").trim();
-    if (!n) return state.kategorien[0].id;
-    const found = state.kategorien.find((k) => k.name.toLowerCase() === n.toLowerCase());
-    if (found) return found.id;
-    const rec = { id: uid("k"), name: n, farbe: PALETTE[state.kategorien.length % PALETTE.length] };
-    state.kategorien.push(rec);
-    return rec.id;
-  }
-
-  function findOrCreatePerson(name) {
-    const n = String(name || "").trim();
-    if (!n) return state.personen[state.personen.length - 1].id;
-    const found = state.personen.find((p) => p.name.toLowerCase() === n.toLowerCase());
-    if (found) return found.id;
-    const rec = { id: uid("p"), name: n };
-    state.personen.push(rec);
-    return rec.id;
-  }
-
-  function startImportCSV() {
-    openTextFile(["csv"], applyCSVImport);
-  }
-
-  function applyCSVImport(text) {
-    try {
-      if (text.charCodeAt(0) === 0xfeff) text = text.slice(1); // BOM entfernen
-      const rows = text.split(/\r?\n/).filter((l) => l.trim() !== "");
-      if (!rows.length) { toast("Datei ist leer"); return; }
-      const sep = (rows[0].match(/;/g) || []).length >= (rows[0].match(/,/g) || []).length ? ";" : ",";
-
-      // Spalten anhand der Kopfzeile zuordnen (sonst feste Reihenfolge)
-      const order = ["bezeichnung", "betrag", "intervall", "kategorie", "person", "fällig", "notiz", "aktiv"];
-      let idx = {}; let start = 0;
-      const head = parseCsvLine(rows[0], sep).map((c) => c.trim().toLowerCase());
-      if (head.includes("betrag") || head.includes("bezeichnung")) {
-        order.forEach((key) => { idx[key] = head.indexOf(key); });
-        start = 1;
-      } else {
-        order.forEach((key, i) => { idx[key] = i; });
+    // Einträge übernehmen, deren id noch nicht existiert; Referenzen umschreiben.
+    const addEntries = (target, source) => {
+      const ids = new Set(target.map((e) => e.id));
+      for (const e of source) {
+        if (ids.has(e.id)) continue; // gleiche id -> bereits vorhanden (Re-Import)
+        const copy = Object.assign({}, e);
+        if (copy.person) copy.person = personIdMap[copy.person] || copy.person;
+        if (copy.kategorieId) copy.kategorieId = katIdMap[copy.kategorieId] || copy.kategorieId;
+        target.push(copy);
+        ids.add(copy.id);
       }
-      const cell = (cols, key) => (idx[key] >= 0 && idx[key] < cols.length ? cols[idx[key]].trim() : "");
+    };
+    addEntries(result.einnahmen, incoming.einnahmen);
+    addEntries(result.zahlungen, incoming.zahlungen);
+    addEntries(result.sparplaene, incoming.sparplaene);
 
-      const neu = [];
-      let skipped = 0;
-      const katVorher = state.kategorien.length, persVorher = state.personen.length;
-      for (let r = start; r < rows.length; r++) {
-        const cols = parseCsvLine(rows[r], sep);
-        const bez = cell(cols, "bezeichnung");
-        const betrag = parseBetrag(cell(cols, "betrag"));
-        if (!bez && !isFinite(betrag)) { continue; }
-        if (!isFinite(betrag) || betrag < 0) { skipped++; continue; }
-        const aktivTxt = cell(cols, "aktiv").toLowerCase();
-        neu.push({
-          id: uid("z"),
-          bezeichnung: bez || "Zahlung",
-          betrag,
-          intervall: intervalFromText(cell(cols, "intervall")),
-          kategorieId: findOrCreateKategorie(cell(cols, "kategorie")),
-          person: findOrCreatePerson(cell(cols, "person")),
-          faellig: parseDateCell(cell(cols, "fällig")),
-          notiz: cell(cols, "notiz"),
-          aktiv: !["nein", "no", "false", "0", "pausiert", "inaktiv"].includes(aktivTxt),
-        });
-      }
-      if (!neu.length) { toast("Keine gültigen Zeilen gefunden"); return; }
-      if (!confirm(`${neu.length} Zahlung(en) aus CSV hinzufügen? (Bestehende bleiben erhalten.)`)) return;
-      state.zahlungen.push(...neu);
-      save(); render();
-      const katNeu = state.kategorien.length - katVorher, persNeu = state.personen.length - persVorher;
-      let msg = `${neu.length} Zahlung(en) importiert`;
-      if (katNeu) msg += `, ${katNeu} neue Kategorie(n)`;
-      if (persNeu) msg += `, ${persNeu} neue Person(en)`;
-      if (skipped) msg += ` — ${skipped} Zeile(n) übersprungen`;
-      toast(msg);
-    } catch (e) {
-      console.error(e);
-      toast("CSV konnte nicht gelesen werden");
-    }
+    return result;
   }
 
   function resetData() {
@@ -1139,6 +1024,20 @@
   function closeModal() {
     $("#modalRoot").innerHTML = "";
     document.removeEventListener("keydown", escClose);
+  }
+
+  // Auswahldialog mit mehreren Aktionsknöpfen (z. B. Zusammenführen / Ersetzen).
+  function openChoice(title, message, actions) {
+    closeModal();
+    const buttons = actions.map((a) =>
+      el("button", { class: "btn " + (a.cls || ""), onclick: () => { closeModal(); if (a.onClick) a.onClick(); } }, a.label));
+    const backdrop = el("div", { class: "modal-backdrop", onclick: (e) => { if (e.target === backdrop) closeModal(); } },
+      el("div", { class: "modal", role: "dialog" },
+        el("div", { class: "modal-head" }, title),
+        el("div", { class: "modal-body" }, el("p", { class: "hint", style: "margin:0" }, message)),
+        el("div", { class: "modal-foot" }, ...buttons)));
+    $("#modalRoot").appendChild(backdrop);
+    document.addEventListener("keydown", escClose);
   }
 
   /* ---------- Init ---------- */

@@ -35,9 +35,10 @@ Zum Sichern oder Übertragen gibt es Export/Import als JSON-Datei.
   oben rechts lässt sich alles zusammen oder pro Person betrachten – die Grundlage für
   später vollständig getrennte Budgets. Beim Löschen einer Person werden ihre Einträge
   automatisch einer anderen Person zugewiesen (keine Daten gehen verloren).
-- **Daten:** vollständiges Backup als **JSON** (Export/Import) sowie **CSV** für die
-  Zahlungen (Export/Import für Excel/Numbers – importierte Zeilen werden hinzugefügt,
-  unbekannte Kategorien/Personen automatisch angelegt). Zurücksetzen.
+- **Daten:** vollständiges Backup als **JSON** (Export/Import) mit allen Einnahmen,
+  Zahlungen, Sparraten, Kategorien und Personen. Beim Import wählbar: bestehende Daten
+  **ersetzen** oder mit den importierten **zusammenführen** (ohne Duplikate) – ideal, um
+  Handy und PC abzugleichen. Zurücksetzen.
 
 > Gemeinsame Alltagsausgaben (z. B. Lebensmittel) trägst du am einfachsten als eine
 > pauschale Zahlung in der Kategorie „Lebensmittel (pauschal)" ein.
@@ -134,8 +135,8 @@ gen_icon.py             erzeugt das Quell-Icon
   die Daten zwischen den Programmstarts erhalten.
 - **Export/Import:** Im Desktop-Fenster werden native Datei-Dialoge verwendet
   (Tauri `dialog`/`fs`-Plugin); im Browser der übliche Download bzw. die Dateiauswahl.
-  JSON ist das vollständige Backup; CSV (Semikolon-getrennt, UTF-8 mit BOM für Excel)
-  dient dem Bearbeiten der Zahlungen in einer Tabellenkalkulation.
+  Der JSON-Export ist das vollständige Backup; beim Import kann ersetzt oder
+  zusammengeführt werden.
 
 ## Mitwirken
 
