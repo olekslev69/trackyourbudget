@@ -611,13 +611,22 @@
     root.appendChild(sectionHead("Daten", "Alle Daten liegen lokal auf diesem Gerät. Sichere oder übertrage sie per Datei."));
 
     root.appendChild(el("div", { class: "card" },
-      el("h3", { style: "margin:0 0 6px" }, "Sichern & Übertragen"),
+      el("h3", { style: "margin:0 0 6px" }, "Sichern & Übertragen (JSON)"),
       el("p", { class: "hint", style: "margin:0" },
-        "Exportiere deine Daten als JSON-Datei (Backup oder Übertragung auf einen anderen Rechner). Beim Import werden die aktuellen Daten ersetzt."),
+        "Vollständiges Backup als JSON-Datei (Einnahmen, Zahlungen, Kategorien, Personen). Beim Import werden die aktuellen Daten ersetzt."),
       el("div", { class: "data-actions" },
         el("button", { class: "btn primary", onclick: exportData }, icon("download"), " Export (JSON)"),
-        el("button", { class: "btn", onclick: startImport }, icon("upload"), " Import (JSON)"),
-        el("input", { type: "file", id: "importFile", accept: "application/json,.json", style: "display:none", onchange: importData }))
+        el("button", { class: "btn", onclick: startImport }, icon("upload"), " Import (JSON)"))
+    ));
+
+    root.appendChild(el("div", { class: "card", style: "margin-top:18px" },
+      el("h3", { style: "margin:0 0 6px" }, "Zahlungen als Tabelle (CSV)"),
+      el("p", { class: "hint", style: "margin:0" },
+        "Zahlungen als CSV für Excel/Numbers exportieren – oder eine Tabelle importieren (wird zu den bestehenden Zahlungen hinzugefügt). Spalten: " +
+        CSV_HEADERS.join(", ") + ". Unbekannte Kategorien/Personen werden automatisch angelegt."),
+      el("div", { class: "data-actions" },
+        el("button", { class: "btn", onclick: exportZahlungenCSV }, icon("download"), " Zahlungen-Export (CSV)"),
+        el("button", { class: "btn", onclick: startImportCSV }, icon("upload"), " Zahlungen-Import (CSV)"))
     ));
 
     const c = calc();
@@ -646,72 +655,205 @@
     return t && t.dialog && t.fs ? t : null;
   }
 
-  async function exportData() {
-    const json = JSON.stringify(state, null, 2);
+  // Text-Datei speichern (Tauri-Dialog oder Browser-Download)
+  async function saveTextFile(defaultName, mime, text) {
+    const ext = defaultName.split(".").pop();
     const t = tauriFs();
     if (t) {
       try {
-        const path = await t.dialog.save({
-          defaultPath: "trackyourbudget-export.json",
-          filters: [{ name: "JSON", extensions: ["json"] }],
-        });
-        if (!path) return;
-        await t.fs.writeTextFile(path, json);
-        toast("Export gespeichert");
-      } catch (e) {
-        console.error(e);
-        toast("Export fehlgeschlagen");
-      }
-      return;
+        const path = await t.dialog.save({ defaultPath: defaultName, filters: [{ name: ext.toUpperCase(), extensions: [ext] }] });
+        if (!path) return false;
+        await t.fs.writeTextFile(path, text);
+        return true;
+      } catch (e) { console.error(e); toast("Export fehlgeschlagen"); return false; }
     }
-    const blob = new Blob([json], { type: "application/json" });
+    const blob = new Blob([text], { type: mime });
     const url = URL.createObjectURL(blob);
-    const a = el("a", { href: url, download: "trackyourbudget-export.json" });
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    const a = el("a", { href: url, download: defaultName });
+    document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
-    toast("Export erstellt");
+    return true;
   }
 
-  async function startImport() {
+  // Text-Datei einlesen (Tauri-Dialog oder Browser-Dateiauswahl)
+  async function openTextFile(extensions, cb) {
     const t = tauriFs();
     if (t) {
       try {
-        const path = await t.dialog.open({
-          multiple: false,
-          filters: [{ name: "JSON", extensions: ["json"] }],
-        });
+        const path = await t.dialog.open({ multiple: false, filters: [{ name: "Datei", extensions }] });
         if (!path) return;
-        const txt = await t.fs.readTextFile(path);
-        applyImport(txt);
-      } catch (e) {
-        console.error(e);
-        toast("Import fehlgeschlagen");
-      }
+        cb(await t.fs.readTextFile(path));
+      } catch (e) { console.error(e); toast("Import fehlgeschlagen"); }
       return;
     }
-    $("#importFile").click();
+    const input = el("input", { type: "file", accept: extensions.map((e) => "." + e).join(","), style: "display:none" });
+    input.addEventListener("change", () => {
+      const f = input.files && input.files[0];
+      if (!f) { input.remove(); return; }
+      const r = new FileReader();
+      r.onload = () => { cb(String(r.result)); input.remove(); };
+      r.readAsText(f, "utf-8");
+    });
+    document.body.appendChild(input);
+    input.click();
   }
 
-  function importData(ev) {
-    const file = ev.target.files && ev.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => applyImport(reader.result);
-    reader.readAsText(file);
-    ev.target.value = "";
+  /* ----- JSON: vollständiges Backup ----- */
+  async function exportData() {
+    if (await saveTextFile("trackyourbudget-export.json", "application/json", JSON.stringify(state, null, 2))) {
+      toast("Export erstellt");
+    }
+  }
+  function startImport() {
+    openTextFile(["json"], (text) => {
+      try {
+        const parsed = JSON.parse(text);
+        if (!parsed || typeof parsed !== "object") throw new Error("ungültig");
+        if (!confirm("Import ersetzt die aktuellen Daten. Fortfahren?")) return;
+        state = migrate(parsed);
+        save(); render(); toast("Import erfolgreich");
+      } catch (e) { toast("Datei konnte nicht gelesen werden"); }
+    });
   }
 
-  function applyImport(text) {
+  /* ----- CSV: Zahlungen als Tabelle (Excel/Numbers) ----- */
+  const CSV_SEP = ";"; // deutsches Excel-Standardtrennzeichen
+  const CSV_HEADERS = ["Bezeichnung", "Betrag", "Intervall", "Kategorie", "Person", "Notiz", "Aktiv"];
+
+  function csvCell(v) {
+    const s = String(v == null ? "" : v);
+    return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  async function exportZahlungenCSV() {
+    const lines = [CSV_HEADERS.join(CSV_SEP)];
+    for (const z of state.zahlungen) {
+      const k = kategorieById(z.kategorieId);
+      lines.push([
+        z.bezeichnung || "",
+        String(z.betrag).replace(".", ","),
+        (INTERVALS[z.intervall] || INTERVALS.monatlich).label,
+        k ? k.name : "",
+        personName(z.person),
+        z.notiz || "",
+        z.aktiv === false ? "nein" : "ja",
+      ].map(csvCell).join(CSV_SEP));
+    }
+    // BOM, damit Excel UTF-8 (Umlaute) korrekt erkennt
+    if (await saveTextFile("zahlungen.csv", "text/csv;charset=utf-8", "﻿" + lines.join("\r\n"))) {
+      toast(state.zahlungen.length + " Zahlung(en) exportiert");
+    }
+  }
+
+  // Eine CSV-Zeile in Felder zerlegen (respektiert Anführungszeichen)
+  function parseCsvLine(line, sep) {
+    const out = []; let cur = ""; let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inQ) {
+        if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else inQ = false; }
+        else cur += c;
+      } else if (c === '"') inQ = true;
+      else if (c === sep) { out.push(cur); cur = ""; }
+      else cur += c;
+    }
+    out.push(cur);
+    return out;
+  }
+
+  function parseBetrag(s) {
+    s = String(s || "").replace(/[€\s]/g, "");
+    if (!s) return NaN;
+    if (s.includes(",") && s.includes(".")) s = s.replace(/\./g, "").replace(",", ".");
+    else if (s.includes(",")) s = s.replace(",", ".");
+    return Number(s);
+  }
+
+  function intervalFromText(s) {
+    const t = String(s || "").trim().toLowerCase();
+    for (const [key, v] of Object.entries(INTERVALS)) {
+      if (t === key || t === v.label.toLowerCase()) return key;
+    }
+    return "monatlich";
+  }
+
+  function findOrCreateKategorie(name) {
+    const n = String(name || "").trim();
+    if (!n) return state.kategorien[0].id;
+    const found = state.kategorien.find((k) => k.name.toLowerCase() === n.toLowerCase());
+    if (found) return found.id;
+    const rec = { id: uid("k"), name: n, farbe: PALETTE[state.kategorien.length % PALETTE.length] };
+    state.kategorien.push(rec);
+    return rec.id;
+  }
+
+  function findOrCreatePerson(name) {
+    const n = String(name || "").trim();
+    if (!n) return state.personen[state.personen.length - 1].id;
+    const found = state.personen.find((p) => p.name.toLowerCase() === n.toLowerCase());
+    if (found) return found.id;
+    const rec = { id: uid("p"), name: n };
+    state.personen.push(rec);
+    return rec.id;
+  }
+
+  function startImportCSV() {
+    openTextFile(["csv"], applyCSVImport);
+  }
+
+  function applyCSVImport(text) {
     try {
-      const parsed = JSON.parse(text);
-      if (!parsed || typeof parsed !== "object") throw new Error("ungültig");
-      if (!confirm("Import ersetzt die aktuellen Daten. Fortfahren?")) return;
-      state = migrate(parsed);
-      save(); render(); toast("Import erfolgreich");
+      if (text.charCodeAt(0) === 0xfeff) text = text.slice(1); // BOM entfernen
+      const rows = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+      if (!rows.length) { toast("Datei ist leer"); return; }
+      const sep = (rows[0].match(/;/g) || []).length >= (rows[0].match(/,/g) || []).length ? ";" : ",";
+
+      // Spalten anhand der Kopfzeile zuordnen (sonst feste Reihenfolge)
+      const order = ["bezeichnung", "betrag", "intervall", "kategorie", "person", "notiz", "aktiv"];
+      let idx = {}; let start = 0;
+      const head = parseCsvLine(rows[0], sep).map((c) => c.trim().toLowerCase());
+      if (head.includes("betrag") || head.includes("bezeichnung")) {
+        order.forEach((key) => { idx[key] = head.indexOf(key); });
+        start = 1;
+      } else {
+        order.forEach((key, i) => { idx[key] = i; });
+      }
+      const cell = (cols, key) => (idx[key] >= 0 && idx[key] < cols.length ? cols[idx[key]].trim() : "");
+
+      const neu = [];
+      let skipped = 0;
+      const katVorher = state.kategorien.length, persVorher = state.personen.length;
+      for (let r = start; r < rows.length; r++) {
+        const cols = parseCsvLine(rows[r], sep);
+        const bez = cell(cols, "bezeichnung");
+        const betrag = parseBetrag(cell(cols, "betrag"));
+        if (!bez && !isFinite(betrag)) { continue; }
+        if (!isFinite(betrag) || betrag < 0) { skipped++; continue; }
+        const aktivTxt = cell(cols, "aktiv").toLowerCase();
+        neu.push({
+          id: uid("z"),
+          bezeichnung: bez || "Zahlung",
+          betrag,
+          intervall: intervalFromText(cell(cols, "intervall")),
+          kategorieId: findOrCreateKategorie(cell(cols, "kategorie")),
+          person: findOrCreatePerson(cell(cols, "person")),
+          notiz: cell(cols, "notiz"),
+          aktiv: !["nein", "no", "false", "0", "pausiert", "inaktiv"].includes(aktivTxt),
+        });
+      }
+      if (!neu.length) { toast("Keine gültigen Zeilen gefunden"); return; }
+      if (!confirm(`${neu.length} Zahlung(en) aus CSV hinzufügen? (Bestehende bleiben erhalten.)`)) return;
+      state.zahlungen.push(...neu);
+      save(); render();
+      const katNeu = state.kategorien.length - katVorher, persNeu = state.personen.length - persVorher;
+      let msg = `${neu.length} Zahlung(en) importiert`;
+      if (katNeu) msg += `, ${katNeu} neue Kategorie(n)`;
+      if (persNeu) msg += `, ${persNeu} neue Person(en)`;
+      if (skipped) msg += ` — ${skipped} Zeile(n) übersprungen`;
+      toast(msg);
     } catch (e) {
-      toast("Datei konnte nicht gelesen werden");
+      console.error(e);
+      toast("CSV konnte nicht gelesen werden");
     }
   }
 
