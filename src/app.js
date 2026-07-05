@@ -67,12 +67,21 @@
       ph_payment: "z. B. Netflix, Miete, Fitnessstudio", ph_note_contract: "z. B. Vertragsende 12/2026",
       // Sparen
       savings_title: "Sparen & Anlegen",
-      savings_sub: "Regelmäßige Sparraten – z. B. ETF-Sparpläne, Tagesgeld oder Altersvorsorge.",
+      savings_sub: "Regelmäßige Sparraten und Sparziele – z. B. ETF-Sparpläne, Tagesgeld oder eine Urlaubskasse.",
       add_savings: "+ Sparrate", no_savings_title: "Noch keine Sparraten.",
-      no_savings_text: "Lege z. B. deinen ETF-Sparplan an.", count_savings: "{n} Sparrate(n)",
+      no_savings_text: "Lege z. B. deinen ETF-Sparplan oder ein Sparziel an.", count_savings: "{n} Sparrate(n)",
       new_savings: "Neue Sparrate", edit_savings: "Sparrate bearbeiten", savings_added: "Sparrate hinzugefügt",
       delete_savings_confirm: "Diese Sparrate löschen?", default_savings_name: "Sparrate",
       ph_savings: "z. B. MSCI World ETF", ph_note_depot: "z. B. Depot bei …",
+      // Sparziele
+      plans_title: "Sparpläne", goals_title: "Sparziele",
+      add_goal: "+ Sparziel", new_goal: "Neues Sparziel", edit_goal: "Sparziel bearbeiten",
+      goal_added: "Sparziel hinzugefügt", default_goal_name: "Sparziel",
+      delete_goal_confirm: "Dieses Sparziel löschen?", ph_goal: "z. B. Urlaub, Notgroschen",
+      label_target: "Zielbetrag", label_current: "Aktueller Stand", target_required: "Bitte Zielbetrag angeben",
+      goal_reached: "Ziel erreicht", goal_remaining: "noch {rest}",
+      deposit_btn: "Einzahlen", deposit_title: "In {name} einzahlen", deposit_amount: "Betrag",
+      deposit_done: "{amount} eingezahlt", goal_reached_toast: "🎉 Sparziel erreicht!",
       // Kategorien
       categories_sub: "Ordne deine Ausgaben thematisch — Farben erscheinen im Diagramm.",
       add_category: "+ Kategorie", payment_one: "{n} Ausgabe", payment_many: "{n} Ausgaben",
@@ -198,12 +207,21 @@
       delete_payment_confirm: "Delete this expense?", default_payment_name: "Expense",
       ph_payment: "e.g. Netflix, rent, gym", ph_note_contract: "e.g. contract ends 12/2026",
       savings_title: "Saving & investing",
-      savings_sub: "Recurring savings – e.g. ETF plans, savings accounts or pension.",
+      savings_sub: "Recurring savings and savings goals – e.g. ETF plans, savings accounts or a vacation fund.",
       add_savings: "+ Savings", no_savings_title: "No savings yet.",
       no_savings_text: "Add your ETF plan, for example.", count_savings: "{n} savings plan(s)",
       new_savings: "New savings plan", edit_savings: "Edit savings plan", savings_added: "Savings plan added",
       delete_savings_confirm: "Delete this savings plan?", default_savings_name: "Savings",
       ph_savings: "e.g. MSCI World ETF", ph_note_depot: "e.g. broker …",
+      // Savings goals
+      plans_title: "Savings plans", goals_title: "Savings goals",
+      add_goal: "+ Goal", new_goal: "New savings goal", edit_goal: "Edit savings goal",
+      goal_added: "Goal added", default_goal_name: "Goal",
+      delete_goal_confirm: "Delete this savings goal?", ph_goal: "e.g. Vacation, emergency fund",
+      label_target: "Target amount", label_current: "Current amount", target_required: "Please enter a target amount",
+      goal_reached: "Goal reached", goal_remaining: "{rest} to go",
+      deposit_btn: "Add money", deposit_title: "Add to {name}", deposit_amount: "Amount",
+      deposit_done: "{amount} added", goal_reached_toast: "🎉 Goal reached!",
       categories_sub: "Group your expenses — colors appear in the chart.",
       add_category: "+ Category", payment_one: "{n} expense", payment_many: "{n} expenses",
       new_category: "New category", edit_category: "Edit category",
@@ -335,6 +353,7 @@
       einnahmen: [],
       zahlungen: [],
       sparplaene: [],
+      sparziele: [], // Sparziele mit Zielbetrag + angespartem Stand (Einzahlungen)
       // Haushalts-Einstellungen (Teil der Daten, werden mit exportiert/importiert).
       settings: { splitShared: false, sharedPersonId: "p_gemeinsam", splitPrompted: false },
     };
@@ -376,6 +395,7 @@
       einnahmen: Array.isArray(d.einnahmen) ? d.einnahmen : [],
       zahlungen: Array.isArray(d.zahlungen) ? d.zahlungen : [],
       sparplaene: Array.isArray(d.sparplaene) ? d.sparplaene : [],
+      sparziele: Array.isArray(d.sparziele) ? d.sparziele : [],
       settings: { splitShared: !!s.splitShared, sharedPersonId, splitPrompted: !!s.splitPrompted },
     };
   }
@@ -944,34 +964,111 @@
   /* ---------- View: Sparen ---------- */
   function renderSparen(root) {
     root.appendChild(sectionHead(t("savings_title"), t("savings_sub"),
-      el("button", { class: "btn primary", onclick: () => openSparModal() }, t("add_savings"))));
+      el("div", { class: "head-actions" },
+        el("button", { class: "btn", onclick: () => openZielModal() }, t("add_goal")),
+        el("button", { class: "btn primary", onclick: () => openSparModal() }, t("add_savings")))));
 
-    const list = state.sparplaene.filter(matchesPerson);
-    if (!list.length) {
+    const ziele = state.sparziele.filter(matchesPerson);
+    const plaene = state.sparplaene.filter(matchesPerson);
+    if (!ziele.length && !plaene.length) {
       root.appendChild(emptyState(t("no_savings_title"), t("no_savings_text")));
       return;
     }
-    const total = list.filter((s) => s.aktiv !== false).reduce((s, sp) => s + monthly(sp), 0);
-    root.appendChild(el("p", { class: "filter-summary" },
-      t("count_savings", { n: list.length }) + " · " + t("sum_line", { m: fmt(total), y: fmt(total * 12) })));
 
-    root.appendChild(el("div", { class: "list" }, ...list
-      .slice().sort((a, b) => monthly(b) - monthly(a)).map((sp) =>
-        el("div", { class: "item" + (sp.aktiv === false ? " inactive" : "") },
-          el("span", { class: "swatch", style: "background:var(--success)" }),
-          el("div", { class: "main" },
-            el("div", { class: "title" }, sp.bezeichnung || t("default_savings_name"),
-              el("span", { class: "tag" }, sparArtLabel(sp.art)),
-              sp.aktiv === false ? el("span", { class: "tag muted" }, t("tag_paused")) : null,
-              el("span", { class: "tag muted" }, personName(sp.person))),
-            el("div", { class: "meta" }, intervalLabel(sp.intervall) + (sp.notiz ? " · " + sp.notiz : ""))),
-          el("div", { class: "value" }, fmt(monthly(sp)),
-            el("small", {}, sp.intervall !== "monatlich" ? fmt(sp.betrag) + " " + intervalLabel(sp.intervall) : t("per_month_slash"))),
-          el("div", { class: "actions" },
-            el("button", { class: "btn ghost icon", title: sp.aktiv === false ? t("activate") : t("pause"), onclick: () => toggleSpar(sp.id) }, icon(sp.aktiv === false ? "play" : "pause")),
-            el("button", { class: "btn ghost icon", title: t("edit"), onclick: () => openSparModal(sp) }, icon("edit")),
-            el("button", { class: "btn danger icon", title: t("delete"), onclick: () => removeSpar(sp.id) }, icon("trash")))
-        ))));
+    // Sparziele (Zielbetrag + angesparter Stand)
+    if (ziele.length) {
+      root.appendChild(el("h3", { class: "sub-head" }, t("goals_title")));
+      root.appendChild(el("div", { class: "goal-grid" }, ...ziele.map(goalCard)));
+    }
+
+    // Sparpläne (regelmäßige Raten)
+    if (plaene.length) {
+      root.appendChild(el("h3", { class: "sub-head", style: "margin-top:24px" }, t("plans_title")));
+      const total = plaene.filter((s) => s.aktiv !== false).reduce((s, sp) => s + monthly(sp), 0);
+      root.appendChild(el("p", { class: "filter-summary" },
+        t("count_savings", { n: plaene.length }) + " · " + t("sum_line", { m: fmt(total), y: fmt(total * 12) })));
+      root.appendChild(el("div", { class: "list" }, ...plaene
+        .slice().sort((a, b) => monthly(b) - monthly(a)).map((sp) =>
+          el("div", { class: "item" + (sp.aktiv === false ? " inactive" : "") },
+            el("span", { class: "swatch", style: "background:var(--success)" }),
+            el("div", { class: "main" },
+              el("div", { class: "title" }, sp.bezeichnung || t("default_savings_name"),
+                el("span", { class: "tag" }, sparArtLabel(sp.art)),
+                sp.aktiv === false ? el("span", { class: "tag muted" }, t("tag_paused")) : null,
+                el("span", { class: "tag muted" }, personName(sp.person))),
+              el("div", { class: "meta" }, intervalLabel(sp.intervall) + (sp.notiz ? " · " + sp.notiz : ""))),
+            el("div", { class: "value" }, fmt(monthly(sp)),
+              el("small", {}, sp.intervall !== "monatlich" ? fmt(sp.betrag) + " " + intervalLabel(sp.intervall) : t("per_month_slash"))),
+            el("div", { class: "actions" },
+              el("button", { class: "btn ghost icon", title: sp.aktiv === false ? t("activate") : t("pause"), onclick: () => toggleSpar(sp.id) }, icon(sp.aktiv === false ? "play" : "pause")),
+              el("button", { class: "btn ghost icon", title: t("edit"), onclick: () => openSparModal(sp) }, icon("edit")),
+              el("button", { class: "btn danger icon", title: t("delete"), onclick: () => removeSpar(sp.id) }, icon("trash")))
+          ))));
+    }
+  }
+
+  function goalCard(z) {
+    const target = Number(z.zielBetrag) || 0;
+    const stand = Number(z.stand) || 0;
+    const pct = target > 0 ? Math.min(1, stand / target) : 0;
+    const done = target > 0 && stand >= target;
+    return el("div", { class: "card goal-card" + (done ? " done" : "") },
+      el("div", { class: "goal-head" },
+        el("div", {},
+          el("div", { class: "goal-name" }, z.bezeichnung || t("default_goal_name"),
+            done ? el("span", { class: "tag ok" }, "🎉 " + t("goal_reached")) : null),
+          el("div", { class: "meta" }, personName(z.person) + (z.notiz ? " · " + z.notiz : ""))),
+        el("div", { class: "actions" },
+          el("button", { class: "btn ghost icon", title: t("edit"), onclick: () => openZielModal(z) }, icon("edit")),
+          el("button", { class: "btn danger icon", title: t("delete"), onclick: () => removeZiel(z.id) }, icon("trash")))),
+      el("div", { class: "goal-bar" }, el("span", { style: "width:" + (pct * 100).toFixed(1) + "%" })),
+      el("div", { class: "goal-figs" },
+        el("b", {}, fmt(stand)), el("span", { class: "hint" }, " / " + fmt(target)),
+        el("span", { class: "goal-pct" }, fmtPct(pct))),
+      el("div", { class: "goal-actions" },
+        el("button", { class: "btn primary btn-small", onclick: () => openEinzahlung(z) }, t("deposit_btn")),
+        !done ? el("span", { class: "hint" }, t("goal_remaining", { rest: fmt(Math.max(0, target - stand)) })) : null));
+  }
+
+  function openZielModal(entry) {
+    const isNew = !entry;
+    const z = entry || { id: uid("g"), bezeichnung: "", zielBetrag: "", stand: 0, person: state.personen[0].id, notiz: "" };
+    openModal(isNew ? t("new_goal") : t("edit_goal"), [
+      textField("bezeichnung", t("label_name"), z.bezeichnung, t("ph_goal")),
+      el("div", { class: "field-row" },
+        numField("zielBetrag", t("label_target"), z.zielBetrag),
+        numField("stand", t("label_current"), z.stand)),
+      selectField("person", t("label_person"), personOptions(), z.person),
+      textField("notiz", t("label_note"), z.notiz, t("ph_note_contract")),
+    ], (vals) => {
+      if (!vals.zielBetrag || Number(vals.zielBetrag) <= 0) { toast(t("target_required")); return false; }
+      const rec = { id: z.id, bezeichnung: vals.bezeichnung.trim() || t("default_goal_name"),
+        zielBetrag: Number(vals.zielBetrag), stand: Math.max(0, Number(vals.stand) || 0),
+        person: vals.person, notiz: vals.notiz.trim() };
+      const i = state.sparziele.findIndex((x) => x.id === z.id);
+      if (i >= 0) state.sparziele[i] = rec; else state.sparziele.push(rec);
+      save(); render(); toast(isNew ? t("goal_added") : t("saved"));
+    });
+  }
+
+  function openEinzahlung(z) {
+    openModal(t("deposit_title", { name: z.bezeichnung || t("default_goal_name") }), [
+      numField("betrag", t("deposit_amount"), ""),
+    ], (vals) => {
+      const amount = Number(vals.betrag) || 0;
+      if (amount <= 0) { toast(t("amount_required")); return false; }
+      const wasDone = (Number(z.stand) || 0) >= (Number(z.zielBetrag) || 0);
+      z.stand = (Number(z.stand) || 0) + amount;
+      save(); render();
+      const nowDone = z.stand >= (Number(z.zielBetrag) || 0);
+      toast(nowDone && !wasDone ? t("goal_reached_toast") : t("deposit_done", { amount: fmt(amount) }));
+    });
+  }
+
+  function removeZiel(id) {
+    if (!confirm(t("delete_goal_confirm"))) return;
+    state.sparziele = state.sparziele.filter((x) => x.id !== id);
+    save(); render(); toast(t("deleted"));
   }
 
   function openSparModal(entry) {

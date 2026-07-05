@@ -214,6 +214,24 @@ body {
 .split-toggle { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; }
 .split-toggle input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
 
+/* Sparen: Unterüberschriften + Sparziele */
+.head-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.sub-head { margin: 6px 2px 12px; font-size: 1.02rem; }
+.btn-small { padding: 7px 14px; font-size: .86rem; }
+.goal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.goal-card { display: flex; flex-direction: column; gap: 10px; }
+.goal-card.done { border-color: var(--success); }
+.goal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.goal-name { font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.goal-bar { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.goal-bar > span { display: block; height: 100%; background: var(--primary); border-radius: 999px; transition: width .3s ease; }
+.goal-card.done .goal-bar > span { background: var(--success); }
+.goal-figs { display: flex; align-items: baseline; gap: 4px; }
+.goal-figs b { font-size: 1.05rem; }
+.goal-figs .goal-pct { margin-left: auto; font-weight: 700; color: var(--text-mute); }
+.goal-actions { display: flex; align-items: center; gap: 12px; }
+.tag.ok { background: rgba(16, 185, 129, .16); color: var(--success); }
+
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: .82rem; font-weight: 600; color: var(--text-soft); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

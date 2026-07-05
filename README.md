@@ -38,6 +38,11 @@ Beispieldaten):
 
 ![Aufteilung gemeinsamer Ausgaben](docs/img/aufteilung.png)
 
+**Sparziele** – eigene Ziele mit Zielbetrag und Fortschritt; einzahlen, bis das Ziel erreicht
+ist und sichtbar „🎉 Ziel erreicht" markiert wird (frei erfundene Beispieldaten):
+
+![Sparziele mit Fortschritt](docs/img/sparziele.png)
+
 ## Funktionen
 
 - **Übersicht (Dashboard):** Einnahmen, Ausgaben, **Sparen** (echte Sparquote) und
@@ -56,6 +61,10 @@ Beispieldaten):
 - **Sparen & Anlegen:** regelmäßige Sparraten (z. B. ETF-Sparpläne, Tagesgeld,
   Altersvorsorge, Krypto) mit Betrag, Intervall, Art und Person. Fließt als echte
   Sparquote und „frei verfügbar" ins Dashboard ein.
+- **Sparziele:** eigene Ziele (z. B. „Urlaub" 1.200 €, „Notgroschen") mit **Zielbetrag** und
+  angespartem **Stand**. Du zahlst per **„Einzahlen"** Beträge ein – der **Fortschrittsbalken**
+  füllt sich, und sobald das Ziel erreicht ist, wird es **deutlich markiert** („🎉 Ziel erreicht",
+  grüner Balken).
 - **Kategorien:** frei anpassbar mit eigener Farbe.
 - **Personen / spätere getrennte Budgets:** Im Tab **Personen** lassen sich Personen
   anlegen, umbenennen und löschen (z. B. „Partnerin" durch den echten Namen ersetzen).
