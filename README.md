@@ -3,8 +3,8 @@
 [![CI](https://github.com/olekslev69/sparblick/actions/workflows/ci.yml/badge.svg)](https://github.com/olekslev69/sparblick/actions/workflows/ci.yml)
 
 Ein kleiner, lokaler **Vertrags- und Budget-Tracker** als Desktop-App.
-Trage dein Einkommen und deine monatlichen Zahlungen (Miete, Abos, Versicherungen,
-Sport …) ein und behalte auf einen Blick, **wie viel Prozent deines Einkommens
+Trage deine Einnahmen und deine monatlichen Ausgaben (Miete, Abos, Versicherungen,
+Sport …) ein und behalte auf einen Blick, **wie viel Prozent deiner Einnahmen
 in welche Kategorie** fließt.
 
 Alle Daten bleiben **lokal auf deinem Gerät** – keine Cloud, keine Anmeldung.
@@ -15,36 +15,36 @@ Die Oberfläche gibt es auf **Deutsch und Englisch** – umschaltbar oben rechts
 
 ## So sieht es aus
 
-**Übersicht (Dashboard)** – Einkommen, Fixkosten, echte Sparquote und frei Verfügbares;
-Donut-Diagramm, Kategorie-Aufteilung mit Prozentanteil vom Einkommen, anstehende Zahlungen
+**Übersicht (Dashboard)** – Einnahmen, Ausgaben, echte Sparquote und frei Verfügbares;
+Donut-Diagramm, Kategorie-Aufteilung mit Prozentanteil der Einnahmen, anstehende Ausgaben
 und eine Auswertung pro Person:
 
 ![Übersicht / Dashboard von Sparblick](docs/img/uebersicht.png)
 
-**Zahlungen & Verträge** – alle Abos und Fixkosten auf einen Monatswert umgerechnet,
+**Ausgaben & Verträge** – alle Ausgaben und Abos auf einen Monatswert umgerechnet,
 per Suche, Kategorie und Sortierung filterbar:
 
-![Zahlungen und Verträge](docs/img/zahlungen.png)
+![Ausgaben und Verträge](docs/img/zahlungen.png)
 
-**Bank-Import (DKB, FYRST & Amex)** – aus einer Umsatzliste (CSV) werden wiederkehrende Zahlungen
+**Bank-Import (DKB, FYRST & Amex)** – aus einer Umsatzliste (CSV) werden wiederkehrende Ausgaben
 erkannt und Lebensmittel/Drogerie/Laden zusammengefasst; du bestätigst per Häkchen, bereits
-vorhandene Zahlungen werden markiert (frei erfundene Beispieldaten):
+vorhandene Ausgaben werden markiert (frei erfundene Beispieldaten):
 
 ![Bank-Import – Vorschau](docs/img/import.png)
 
 ## Funktionen
 
-- **Übersicht (Dashboard):** Einkommen, Fixkosten, **Sparen** (echte Sparquote) und
-  frei Verfügbares; Donut-Diagramm und Kategorie-Aufteilung mit Prozentanteil vom
-  Einkommen. Per **Umschalter Monat / Jahr** lassen sich alle Beträge auf Monats- oder
+- **Übersicht (Dashboard):** Einnahmen, Ausgaben, **Sparen** (echte Sparquote) und
+  frei Verfügbares; Donut-Diagramm und Kategorie-Aufteilung mit Prozentanteil der
+  Einnahmen. Per **Umschalter Monat / Jahr** lassen sich alle Beträge auf Monats- oder
   Jahresbasis anzeigen (Jahresübersicht = was alle Verträge pro Jahr kosten).
-  Ein Bereich **„Demnächst fällig"** zeigt anstehende Zahlungen mit Datum und
+  Ein Bereich **„Demnächst fällig"** zeigt anstehende Ausgaben mit Datum und
   farbiger Dringlichkeit.
-- **Einnahmen:** mehrere Einkommensquellen, auch pro Person.
-- **Zahlungen & Verträge:** Betrag, Intervall (wöchentlich, monatlich, quartals­weise,
+- **Einnahmen:** mehrere Einnahmequellen, auch pro Person.
+- **Ausgaben & Verträge:** Betrag, Intervall (wöchentlich, monatlich, quartals­weise,
   halbjährlich, jährlich), Kategorie, optionales **Fälligkeitsdatum** und Notiz. Alle
   Beträge werden automatisch auf einen **Monatswert** umgerechnet; das nächste
-  Fälligkeitsdatum rollt automatisch anhand des Intervalls in die Zukunft. Zahlungen
+  Fälligkeitsdatum rollt automatisch anhand des Intervalls in die Zukunft. Ausgaben
   lassen sich pausieren. Die Liste ist per **Suche, Kategorie und Sortierung filterbar**;
   eine Summenzeile zeigt Monats- und Jahreskosten der Auswahl.
 - **Sparen & Anlegen:** regelmäßige Sparraten (z. B. ETF-Sparpläne, Tagesgeld,
@@ -60,18 +60,18 @@ vorhandene Zahlungen werden markiert (frei erfundene Beispieldaten):
 - **Bank-Import (DKB, FYRST & Amex):** Unter **Daten** lässt sich eine **Umsatzliste (CSV)**
   einlesen – aktuell werden die Formate von **DKB**, **FYRST** und **American Express** erkannt
   (Amex mit umgekehrtem Vorzeichen: Gutschriften/Zahlungen werden korrekt ausgenommen). Die App
-  erkennt automatisch **wiederkehrende Zahlungen** (Miete, Versicherungen inkl. Krankenkasse,
+  erkennt automatisch **wiederkehrende Ausgaben** (Miete, Versicherungen inkl. Krankenkasse,
   Strom, Abos, Telefon, Auto/KFZ, Software …) und fasst gleichartige Kleinbeträge zu je **einem
   Sammelposten** zusammen: **Lebensmittel** (inkl. Bäckereien), **Drogerie & Haushalt** und
   **Auto: Laden** (E-Auto). Umbuchungen aufs eigene oder **Gemeinschaftskonto**, **Steuern**,
   Investitionen, Erstattungen und Bargeld-Abhebungen werden **ignoriert**. Es wird nichts automatisch übernommen – jeder Vorschlag wird in einer
-  **Vorschau per Häkchen bestätigt**; bereits vorhandene Zahlungen werden erkannt und nicht
-  doppelt angelegt (sicher beim monatlichen Re-Import) – **auch wenn du die Zahlung
-  umbenannt hast**, denn jede importierte Zahlung merkt sich intern ihren Ursprung. Der
+  **Vorschau per Häkchen bestätigt**; bereits vorhandene Ausgaben werden erkannt und nicht
+  doppelt angelegt (sicher beim monatlichen Re-Import) – **auch wenn du die Ausgabe
+  umbenannt hast**, denn jede importierte Ausgabe merkt sich intern ihren Ursprung. Der
   Importer ist so aufgebaut, dass sich **weitere Banken** leicht ergänzen lassen (siehe
   [CONTRIBUTING.md](CONTRIBUTING.md)).
 - **Daten:** vollständiges Backup als **JSON** (Export/Import) mit allen Einnahmen,
-  Zahlungen, Sparraten, Kategorien und Personen. Beim Import wählbar: bestehende Daten
+  Ausgaben, Sparraten, Kategorien und Personen. Beim Import wählbar: bestehende Daten
   **ersetzen** oder mit den importierten **zusammenführen** (ohne Duplikate) – ideal, um
   Handy und PC abzugleichen. Zurücksetzen.
 
@@ -107,7 +107,7 @@ aktivieren; danach deployt der Workflow `.github/workflows/pages.yml` bei jedem 
 `main`.
 
 > **Datenschutz:** Veröffentlicht wird nur die App selbst (der Code) – **keine Daten**.
-> Deine Einnahmen, Zahlungen und Sparraten bleiben ausschließlich lokal auf dem jeweiligen
+> Deine Einnahmen, Ausgaben und Sparraten bleiben ausschließlich lokal auf dem jeweiligen
 > Gerät. Auf einem neuen Gerät trägst du die Daten neu ein oder überträgst sie einmalig
 > per JSON-Export/Import.
 
