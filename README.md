@@ -32,6 +32,12 @@ vorhandene Ausgaben werden markiert (frei erfundene Beispieldaten):
 
 ![Bank-Import – Vorschau](docs/img/import.png)
 
+**Aufteilung (Paare, Familien, WGs)** – gemeinsame Ausgaben optional **50/50** auf die Personen
+aufteilen; jede Person sieht ihren fairen Anteil an den Haushaltskosten (frei erfundene
+Beispieldaten):
+
+![Aufteilung gemeinsamer Ausgaben](docs/img/aufteilung.png)
+
 ## Funktionen
 
 - **Übersicht (Dashboard):** Einnahmen, Ausgaben, **Sparen** (echte Sparquote) und
@@ -57,6 +63,13 @@ vorhandene Ausgaben werden markiert (frei erfundene Beispieldaten):
   oben rechts lässt sich alles zusammen oder pro Person betrachten – die Grundlage für
   später vollständig getrennte Budgets. Beim Löschen einer Person werden ihre Einträge
   automatisch einer anderen Person zugewiesen (keine Daten gehen verloren).
+- **Aufteilung (Paare, Familien, WGs):** Im Tab **Aufteilung** lassen sich gemeinsame Ausgaben
+  **optional 50/50** auf die Personen aufteilen. Ist die Aufteilung aktiv, werden die Ausgaben
+  des gemeinsamen Topfs (frei wählbar, Standard „Gemeinsam") zu gleichen Teilen auf die übrigen
+  Personen verteilt; jede Person sieht ihren **fairen Anteil** an den Haushaltskosten (eigene
+  Ausgaben + Anteil gemeinsam) sowie ihr frei Verfügbares. **Standardmäßig aus** – so bleibt für
+  **WGs**, die den gemeinsamen Topf nicht fair teilen, alles wie gehabt. Die Einstellung ist Teil
+  der Daten (wird mit exportiert/importiert).
 - **Bank-Import (DKB, FYRST & Amex):** Unter **Daten** lässt sich eine **Umsatzliste (CSV)**
   einlesen – aktuell werden die Formate von **DKB**, **FYRST** und **American Express** erkannt
   (Amex mit umgekehrtem Vorzeichen: Gutschriften/Zahlungen werden korrekt ausgenommen). Die App

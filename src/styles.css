@@ -210,6 +210,10 @@ body {
 .about-link { color: var(--primary); font-weight: 600; text-decoration: none; }
 .about-link:hover { text-decoration: underline; }
 
+/* Aufteilung: Umschalter */
+.split-toggle { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; }
+.split-toggle input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: .82rem; font-weight: 600; color: var(--text-soft); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

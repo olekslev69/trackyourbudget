@@ -6,7 +6,7 @@
   const STORAGE_KEY = "tyb_data_v1";
   const LANG_KEY = "tyb_lang";
   const CURRENCY = "EUR";
-  const APP_VERSION = "0.5.0"; // muss zur Version in package.json / tauri.conf.json passen
+  const APP_VERSION = "0.6.0"; // muss zur Version in package.json / tauri.conf.json passen
   const REPO_URL = "https://github.com/olekslev69/sparblick";
 
   /* ---------- Sprache / i18n ---------- */
@@ -15,7 +15,8 @@
       // Chrome / Navigation
       view: "Ansicht", filter_by_person: "Nach Person filtern", all_combined: "Alle zusammen",
       tab_uebersicht: "Übersicht", tab_einnahmen: "Einnahmen", tab_zahlungen: "Ausgaben",
-      tab_sparen: "Sparen", tab_kategorien: "Kategorien", tab_personen: "Personen", tab_daten: "Daten",
+      tab_sparen: "Sparen", tab_kategorien: "Kategorien", tab_personen: "Personen",
+      tab_aufteilung: "Aufteilung", tab_daten: "Daten",
       // Aktionen / generisch
       cancel: "Abbrechen", save_btn: "Speichern", edit: "Bearbeiten", delete: "Löschen",
       pause: "Pausieren", activate: "Aktivieren", saved: "Gespeichert", deleted: "Gelöscht",
@@ -85,7 +86,22 @@
       new_person: "Neue Person", edit_person: "Person bearbeiten", person_added: "Person hinzugefügt",
       min_one_person: "Mindestens eine Person muss bleiben",
       person_reassign_confirm: "Diese Person ist {n}× zugeordnet. Ihre Einträge werden {fallback} zugewiesen. Fortfahren?",
-      delete_person_confirm: "Diese Person löschen?", ph_person: "z. B. dein Name oder der deiner Frau",
+      delete_person_confirm: "Diese Person löschen?", ph_person: "z. B. dein Name oder der deiner Partner:in",
+      // Aufteilung (Paare / Familien / WG)
+      split_sub: "Gemeinsame Ausgaben fair auf die Personen aufteilen (Werte pro Monat).",
+      split_settings_title: "So wird aufgeteilt",
+      split_settings_text: "Wenn aktiv, werden die Ausgaben des gemeinsamen Topfs zu gleichen Teilen (50/50) auf die übrigen Personen verteilt. Für WGs, die nicht fair teilen, einfach aus lassen.",
+      split_toggle_label: "Gemeinsame Ausgaben 50/50 aufteilen",
+      split_shared_person: "Gemeinsamer Topf",
+      split_empty_title: "Noch keine Aufteilung möglich",
+      split_empty_text: "Füge im Tab Personen eine zweite Person hinzu, um gemeinsame Ausgaben aufzuteilen.",
+      split_own: "Eigene Ausgaben",
+      split_shared_line: "Anteil gemeinsam (50/50)",
+      split_summary: "Gemeinsame Ausgaben: {pot} · 50/50 auf {n} Personen — je {each}",
+      per_person_split_note: "Gemeinsame Ausgaben sind 50/50 aufgeteilt.",
+      split_prompt_title: "Gemeinsame Ausgaben aufteilen?",
+      split_prompt: "Sollen gemeinsame Ausgaben automatisch 50/50 auf die Personen aufgeteilt werden? Später jederzeit im Tab Aufteilung änderbar.",
+      split_prompt_yes: "Ja, 50/50 aufteilen", split_prompt_no: "Nein, danke",
       // Daten
       data_sub: "Alle Daten liegen lokal auf diesem Gerät. Sichere oder übertrage sie per Datei.",
       backup_title: "Sichern & Übertragen (JSON)",
@@ -139,7 +155,8 @@
     en: {
       view: "View", filter_by_person: "Filter by person", all_combined: "All combined",
       tab_uebersicht: "Overview", tab_einnahmen: "Income", tab_zahlungen: "Expenses",
-      tab_sparen: "Savings", tab_kategorien: "Categories", tab_personen: "People", tab_daten: "Data",
+      tab_sparen: "Savings", tab_kategorien: "Categories", tab_personen: "People",
+      tab_aufteilung: "Split", tab_daten: "Data",
       cancel: "Cancel", save_btn: "Save", edit: "Edit", delete: "Delete",
       pause: "Pause", activate: "Activate", saved: "Saved", deleted: "Deleted",
       name_required: "Please enter a name", amount_required: "Please enter an amount",
@@ -199,6 +216,21 @@
       min_one_person: "At least one person must remain",
       person_reassign_confirm: "This person is assigned {n}×. Their entries will be reassigned to {fallback}. Continue?",
       delete_person_confirm: "Delete this person?", ph_person: "e.g. your name or your partner's",
+      // Split (couples / families / shared flats)
+      split_sub: "Split shared expenses fairly across people (values per month).",
+      split_settings_title: "How splitting works",
+      split_settings_text: "When on, the shared pot's expenses are split equally (50/50) across the other people. For shared flats that don't split fairly, just leave it off.",
+      split_toggle_label: "Split shared expenses 50/50",
+      split_shared_person: "Shared pot",
+      split_empty_title: "Nothing to split yet",
+      split_empty_text: "Add a second person under \"People\" to split shared expenses.",
+      split_own: "Own expenses",
+      split_shared_line: "Shared share (50/50)",
+      split_summary: "Shared expenses: {pot} · 50/50 across {n} people — {each} each",
+      per_person_split_note: "Shared expenses are split 50/50.",
+      split_prompt_title: "Split shared expenses?",
+      split_prompt: "Split shared expenses 50/50 across people automatically? You can change this anytime under \"Split\".",
+      split_prompt_yes: "Yes, split 50/50", split_prompt_no: "No thanks",
       data_sub: "All data is stored locally on this device. Back up or transfer it via file.",
       backup_title: "Backup & transfer (JSON)",
       backup_text: "Full backup as a JSON file – includes all income, expenses, savings, categories and people. Ideal for transferring between phone and PC. On import you can choose: replace existing data or merge it with the imported data.",
@@ -303,6 +335,8 @@
       einnahmen: [],
       zahlungen: [],
       sparplaene: [],
+      // Haushalts-Einstellungen (Teil der Daten, werden mit exportiert/importiert).
+      settings: { splitShared: false, sharedPersonId: "p_gemeinsam", splitPrompted: false },
     };
   }
 
@@ -327,13 +361,22 @@
 
   function migrate(d) {
     const base = defaultData();
+    const personen = Array.isArray(d.personen) && d.personen.length ? d.personen : base.personen;
+    // Einstellungen defensiv übernehmen (Abwärtskompatibilität mit älteren Exporten).
+    const s = d.settings && typeof d.settings === "object" ? d.settings : {};
+    let sharedPersonId = typeof s.sharedPersonId === "string" ? s.sharedPersonId : "p_gemeinsam";
+    if (!personen.some((p) => p.id === sharedPersonId)) {
+      const g = personen.find((p) => p.id === "p_gemeinsam") || personen.find((p) => /gemeinsam|shared|haushalt/i.test(p.name));
+      sharedPersonId = g ? g.id : "";
+    }
     return {
       version: 1,
-      personen: Array.isArray(d.personen) && d.personen.length ? d.personen : base.personen,
+      personen,
       kategorien: Array.isArray(d.kategorien) && d.kategorien.length ? d.kategorien : base.kategorien,
       einnahmen: Array.isArray(d.einnahmen) ? d.einnahmen : [],
       zahlungen: Array.isArray(d.zahlungen) ? d.zahlungen : [],
       sparplaene: Array.isArray(d.sparplaene) ? d.sparplaene : [],
+      settings: { splitShared: !!s.splitShared, sharedPersonId, splitPrompted: !!s.splitPrompted },
     };
   }
 
@@ -498,12 +541,35 @@
     return { income, costs, savings, rest: income - costs - savings, catRows };
   }
 
+  // Fairer Anteil je Person (Monatswerte, ohne personFilter). Bei aktivem Split werden
+  // die Ausgaben der "gemeinsamen" Person (settings.sharedPersonId) zu gleichen Teilen
+  // (50/50) auf die individuellen Personen verteilt.
+  function personShares() {
+    const sumBy = (arr, id) => arr.filter((x) => x.person === id).reduce((s, x) => s + monthly(x), 0);
+    const activeZ = state.zahlungen.filter((z) => z.aktiv !== false);
+    const activeS = state.sparplaene.filter((s) => s.aktiv !== false);
+    const sharedId = state.settings ? state.settings.sharedPersonId : "";
+    const shared = !!(state.settings && state.settings.splitShared) && sharedId && state.personen.some((p) => p.id === sharedId);
+    const individuals = state.personen.filter((p) => !(shared && p.id === sharedId));
+    const pot = shared ? sumBy(activeZ, sharedId) : 0;
+    const share = shared && individuals.length ? pot / individuals.length : 0;
+    return individuals.map((p) => {
+      const income = sumBy(state.einnahmen, p.id);
+      const expensesOwn = sumBy(activeZ, p.id);
+      const expensesShared = shared ? share : 0;
+      const expenses = expensesOwn + expensesShared;
+      const savings = sumBy(activeS, p.id);
+      return { personId: p.id, name: p.name, income, expensesOwn, expensesShared, expenses, savings, free: income - expenses - savings };
+    });
+  }
+
   /* ---------- Rendering: Navigation ---------- */
   function localizeChrome() {
     document.documentElement.lang = lang;
     const tabKeys = {
       uebersicht: "tab_uebersicht", einnahmen: "tab_einnahmen", zahlungen: "tab_zahlungen",
-      sparen: "tab_sparen", kategorien: "tab_kategorien", personen: "tab_personen", daten: "tab_daten",
+      sparen: "tab_sparen", kategorien: "tab_kategorien", personen: "tab_personen",
+      aufteilung: "tab_aufteilung", daten: "tab_daten",
     };
     document.querySelectorAll(".tab").forEach((tab) => { tab.textContent = t(tabKeys[tab.dataset.view] || tab.dataset.view); });
     const vl = document.querySelector(".view-filter > span");
@@ -535,6 +601,7 @@
       sparen: renderSparen,
       kategorien: renderKategorien,
       personen: renderPersonen,
+      aufteilung: renderAufteilung,
       daten: renderDaten,
     }[currentView])(app);
   }
@@ -587,23 +654,21 @@
 
     // Pro-Person-Aufschlüsselung (nur wenn "Alle" gewählt)
     if (personFilter === "all") {
-      const cards = state.personen.map((p) => {
-        const inc = state.einnahmen.filter((e) => e.person === p.id).reduce((s, e) => s + monthly(e), 0);
-        const cost = state.zahlungen.filter((z) => z.aktiv !== false && z.person === p.id).reduce((s, z) => s + monthly(z), 0);
-        const sav = state.sparplaene.filter((s) => s.aktiv !== false && s.person === p.id).reduce((s, sp) => s + monthly(sp), 0);
-        if (inc === 0 && cost === 0 && sav === 0) return null;
+      const split = !!(state.settings && state.settings.splitShared);
+      const cards = personShares().map((ps) => {
+        if (ps.income === 0 && ps.expenses === 0 && ps.savings === 0) return null;
         return el("div", { class: "card person-card" },
-          el("h4", {}, p.name),
-          el("div", { class: "line" }, el("span", {}, t("income")), el("b", {}, fmt(inc * f))),
-          el("div", { class: "line" }, el("span", {}, t("pp_costs")), el("b", {}, fmt(cost * f))),
-          el("div", { class: "line" }, el("span", {}, t("savings")), el("b", {}, fmt(sav * f))),
-          el("div", { class: "line" }, el("span", {}, t("free_short")), el("b", {}, fmt((inc - cost - sav) * f)))
+          el("h4", {}, ps.name),
+          el("div", { class: "line" }, el("span", {}, t("income")), el("b", {}, fmt(ps.income * f))),
+          el("div", { class: "line" }, el("span", {}, t("pp_costs")), el("b", {}, fmt(ps.expenses * f))),
+          el("div", { class: "line" }, el("span", {}, t("savings")), el("b", {}, fmt(ps.savings * f))),
+          el("div", { class: "line" }, el("span", {}, t("free_short")), el("b", {}, fmt(ps.free * f)))
         );
       }).filter(Boolean);
       if (cards.length) {
         root.appendChild(el("div", { class: "section-head", style: "margin-top:26px" },
           el("div", {}, el("h2", { style: "font-size:1.05rem" }, t("per_person")),
-            el("p", {}, t("per_person_sub")))));
+            el("p", {}, split ? t("per_person_split_note") : t("per_person_sub")))));
         root.appendChild(el("div", { class: "person-cards" }, ...cards));
       }
     }
@@ -1025,6 +1090,7 @@
       const i = state.personen.findIndex((x) => x.id === p.id);
       if (i >= 0) state.personen[i] = rec; else state.personen.push(rec);
       save(); render(); toast(isNew ? t("person_added") : t("saved"));
+      if (isNew) maybePromptSplit();
     });
   }
 
@@ -1043,6 +1109,74 @@
     state.personen = state.personen.filter((p) => p.id !== id);
     if (personFilter === id) personFilter = "all";
     save(); render(); toast(t("deleted"));
+  }
+
+  /* ---------- View: Aufteilung (Paare / Familien / WG) ---------- */
+  function renderAufteilung(root) {
+    root.appendChild(sectionHead(t("tab_aufteilung"), t("split_sub")));
+    const settings = state.settings;
+
+    // Einstellungs-Karte: Aufteilung an/aus + gemeinsamer Topf
+    const toggle = el("input", { type: "checkbox" });
+    toggle.checked = !!settings.splitShared;
+    toggle.addEventListener("change", () => {
+      settings.splitShared = toggle.checked; settings.splitPrompted = true; save(); render();
+    });
+    const sharedSel = el("select");
+    state.personen.forEach((p) => {
+      const o = el("option", { value: p.id }, p.name);
+      if (p.id === settings.sharedPersonId) o.selected = true;
+      sharedSel.appendChild(o);
+    });
+    sharedSel.addEventListener("change", () => { settings.sharedPersonId = sharedSel.value; save(); render(); });
+
+    root.appendChild(el("div", { class: "card" },
+      el("h3", { style: "margin:0 0 6px" }, t("split_settings_title")),
+      el("p", { class: "hint", style: "margin:0 0 12px" }, t("split_settings_text")),
+      el("label", { class: "split-toggle" }, toggle, el("span", {}, t("split_toggle_label"))),
+      el("div", { class: "field", style: "margin-top:12px;max-width:280px" },
+        el("label", {}, t("split_shared_person")), sharedSel)
+    ));
+
+    const sharedId = settings.sharedPersonId;
+    const individualCount = state.personen.filter((p) => !(settings.splitShared && p.id === sharedId)).length;
+    if (individualCount < 2) {
+      root.appendChild(emptyState(t("split_empty_title"), t("split_empty_text")));
+      return;
+    }
+
+    const shares = personShares();
+    // Zusammenfassung des gemeinsamen Topfs (nur bei aktiver Aufteilung)
+    if (settings.splitShared) {
+      const pot = state.zahlungen.filter((z) => z.aktiv !== false && z.person === sharedId).reduce((s, z) => s + monthly(z), 0);
+      root.appendChild(el("p", { class: "filter-summary", style: "margin:16px 2px 4px" },
+        t("split_summary", { pot: fmt(pot), n: shares.length, each: fmt(shares.length ? pot / shares.length : 0) })));
+    }
+
+    const cards = shares.map((ps) => el("div", { class: "card person-card" },
+      el("h4", {}, ps.name),
+      el("div", { class: "line" }, el("span", {}, t("income")), el("b", {}, fmt(ps.income))),
+      el("div", { class: "line" }, el("span", {}, t("split_own")), el("b", {}, fmt(ps.expensesOwn))),
+      settings.splitShared ? el("div", { class: "line" }, el("span", {}, t("split_shared_line")), el("b", {}, fmt(ps.expensesShared))) : null,
+      el("div", { class: "line", style: "font-weight:700;border-top:1px solid var(--border);padding-top:8px;margin-top:2px" },
+        el("span", {}, t("pp_costs")), el("b", {}, fmt(ps.expenses))),
+      el("div", { class: "line" }, el("span", {}, t("savings")), el("b", {}, fmt(ps.savings))),
+      el("div", { class: "line" }, el("span", {}, t("free_short")), el("b", {}, fmt(ps.free)))
+    ));
+    root.appendChild(el("div", { class: "person-cards", style: "margin-top:8px" }, ...cards));
+  }
+
+  // Einmaliger Hinweis, sobald der Haushalt nach ≥2 Personen aussieht.
+  function maybePromptSplit() {
+    const s = state.settings;
+    if (!s || s.splitShared || s.splitPrompted) return;
+    const individuals = state.personen.filter((p) => p.id !== s.sharedPersonId);
+    if (individuals.length < 2) return;
+    s.splitPrompted = true; save();
+    openChoice(t("split_prompt_title"), t("split_prompt"), [
+      { label: t("split_prompt_yes"), cls: "primary", onClick: () => { state.settings.splitShared = true; save(); currentView = "aufteilung"; render(); } },
+      { label: t("split_prompt_no") },
+    ]);
   }
 
   /* ---------- View: Daten ---------- */
