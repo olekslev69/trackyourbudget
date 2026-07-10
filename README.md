@@ -95,7 +95,10 @@ ist und sichtbar „🎉 Ziel erreicht" markiert wird (frei erfundene Beispielda
 - **Daten:** vollständiges Backup als **JSON** (Export/Import) mit allen Einnahmen,
   Ausgaben, Sparraten, Kategorien und Personen. Beim Import wählbar: bestehende Daten
   **ersetzen** oder mit den importierten **zusammenführen** (ohne Duplikate) – ideal, um
-  Handy und PC abzugleichen. Zurücksetzen.
+  Handy und PC abzugleichen. Zusätzlich **CSV-Export** zum Öffnen in Excel, Numbers oder
+  Google Sheets – z. B. um das Budget gemeinsam als Familie durchzugehen oder an eine
+  Steuerberatung weiterzugeben (reiner Export, für Backups weiterhin JSON verwenden).
+  Zurücksetzen.
 
 > Gemeinsame Alltagsausgaben (z. B. Lebensmittel) trägst du am einfachsten als eine
 > pauschale Zahlung in der Kategorie „Lebensmittel (pauschal)" ein.

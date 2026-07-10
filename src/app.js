@@ -6,7 +6,7 @@
   const STORAGE_KEY = "tyb_data_v1";
   const LANG_KEY = "tyb_lang";
   const CURRENCY = "EUR";
-  const APP_VERSION = "0.7.0"; // muss zur Version in package.json / tauri.conf.json passen
+  const APP_VERSION = "0.8.0"; // muss zur Version in package.json / tauri.conf.json passen
   const REPO_URL = "https://github.com/olekslev69/sparblick";
 
   /* ---------- Sprache / i18n ---------- */
@@ -116,6 +116,11 @@
       backup_title: "Sichern & Übertragen (JSON)",
       backup_text: "Vollständiges Backup als JSON-Datei – enthält alle Einnahmen, Ausgaben, Sparraten, Kategorien und Personen. Ideal zum Übertragen zwischen Handy und PC. Beim Import kannst du wählen: bestehende Daten ersetzen oder mit den importierten zusammenführen.",
       export_json: " Export (JSON)", import_json: " Import (JSON)",
+      export_csv: " Export (CSV)",
+      csv_title: "Excel / Numbers / Google Sheets (CSV)",
+      csv_text: "Export als CSV-Datei zum Öffnen in Excel, Numbers oder Google Sheets – z. B. um das Budget gemeinsam durchzugehen oder an eine Steuerberatung weiterzugeben. Nur für den Export gedacht; für Backups und die Übertragung zwischen Geräten das JSON-Format verwenden.",
+      csv_type: "Art", csv_active: "Aktiv", csv_target: "Zielbetrag", csv_current_amount: "Stand",
+      csv_yes: "Ja", csv_no: "Nein",
       current_status: "Aktueller Stand", st_income: "Einnahmen", st_payments: "Ausgaben",
       st_savings: "Sparraten", st_categories: "Kategorien", st_income_month: "Einnahmen / Monat",
       st_costs_month: "Ausgaben / Monat", st_savings_month: "Sparen / Monat",
@@ -253,6 +258,11 @@
       backup_title: "Backup & transfer (JSON)",
       backup_text: "Full backup as a JSON file – includes all income, expenses, savings, categories and people. Ideal for transferring between phone and PC. On import you can choose: replace existing data or merge it with the imported data.",
       export_json: " Export (JSON)", import_json: " Import (JSON)",
+      export_csv: " Export (CSV)",
+      csv_title: "Excel / Numbers / Google Sheets (CSV)",
+      csv_text: "Export as a CSV file to open in Excel, Numbers or Google Sheets – e.g. to go through the budget together as a family or hand it to an accountant. For export only; use the JSON format for backups and transferring between devices.",
+      csv_type: "Type", csv_active: "Active", csv_target: "Target amount", csv_current_amount: "Current amount",
+      csv_yes: "Yes", csv_no: "No",
       current_status: "Current status", st_income: "Income entries", st_payments: "Expenses",
       st_savings: "Savings plans", st_categories: "Categories", st_income_month: "Income / month",
       st_costs_month: "Expenses / month", st_savings_month: "Savings / month",
@@ -1290,6 +1300,13 @@
     ));
 
     root.appendChild(el("div", { class: "card", style: "margin-top:18px" },
+      el("h3", { style: "margin:0 0 6px" }, t("csv_title")),
+      el("p", { class: "hint", style: "margin:0" }, t("csv_text")),
+      el("div", { class: "data-actions" },
+        el("button", { class: "btn", onclick: exportCsv }, icon("download"), t("export_csv")))
+    ));
+
+    root.appendChild(el("div", { class: "card", style: "margin-top:18px" },
       el("h3", { style: "margin:0 0 6px" }, t("dkb_card_title")),
       el("p", { class: "hint", style: "margin:0" }, t("dkb_card_text")),
       el("div", { class: "data-actions" },
@@ -1370,6 +1387,61 @@
   /* ----- JSON: vollständiges Backup ----- */
   async function exportData() {
     if (await saveTextFile("sparblick-export.json", "application/json", JSON.stringify(state, null, 2))) {
+      toast(t("export_done"));
+    }
+  }
+
+  /* ----- CSV: Export für Tabellenkalkulation (nur Export, kein Re-Import) ----- */
+  // Semikolon als Trenner und Komma als Dezimaltrennzeichen (wie bei DKB/FYRST-Exporten),
+  // damit die Datei in einem deutschsprachigen Excel/Numbers direkt korrekt aufgeht.
+  function csvField(v) {
+    const s = v == null ? "" : String(v);
+    return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function csvNum(n) {
+    return (Number(n) || 0).toFixed(2).replace(".", ",");
+  }
+  function csvRow(fields) {
+    return fields.map(csvField).join(";");
+  }
+  function exportCsvText() {
+    const yn = (b) => (b ? t("csv_yes") : t("csv_no"));
+    const lines = [];
+
+    lines.push(csvRow([t("tab_einnahmen")]));
+    lines.push(csvRow([t("label_name"), t("label_amount"), t("label_interval"), t("label_person")]));
+    for (const e of state.einnahmen) {
+      lines.push(csvRow([e.bezeichnung || t("default_income_name"), csvNum(e.betrag), intervalLabel(e.intervall), personName(e.person)]));
+    }
+
+    lines.push("");
+    lines.push(csvRow([t("tab_zahlungen")]));
+    lines.push(csvRow([t("label_name"), t("label_amount"), t("label_interval"), t("label_category"), t("label_person"), t("csv_active"), t("label_next_due"), t("label_note")]));
+    for (const z of state.zahlungen) {
+      const k = kategorieById(z.kategorieId);
+      lines.push(csvRow([z.bezeichnung || t("default_payment_name"), csvNum(z.betrag), intervalLabel(z.intervall),
+        k ? k.name : t("no_category"), personName(z.person), yn(z.aktiv !== false), z.faellig || "", z.notiz || ""]));
+    }
+
+    lines.push("");
+    lines.push(csvRow([t("plans_title")]));
+    lines.push(csvRow([t("label_name"), t("label_amount"), t("label_interval"), t("csv_type"), t("label_person"), t("csv_active"), t("label_note")]));
+    for (const sp of state.sparplaene) {
+      lines.push(csvRow([sp.bezeichnung || t("default_savings_name"), csvNum(sp.betrag), intervalLabel(sp.intervall),
+        sparArtLabel(sp.art), personName(sp.person), yn(sp.aktiv !== false), sp.notiz || ""]));
+    }
+
+    lines.push("");
+    lines.push(csvRow([t("goals_title")]));
+    lines.push(csvRow([t("label_name"), t("csv_target"), t("csv_current_amount"), t("label_person"), t("label_note")]));
+    for (const z of state.sparziele) {
+      lines.push(csvRow([z.bezeichnung || t("default_goal_name"), csvNum(z.zielBetrag), csvNum(z.stand), personName(z.person), z.notiz || ""]));
+    }
+
+    return "﻿" + lines.join("\r\n") + "\r\n"; // BOM: Umlaute in Excel korrekt anzeigen
+  }
+  async function exportCsv() {
+    if (await saveTextFile("sparblick-export.csv", "text/csv", exportCsvText())) {
       toast(t("export_done"));
     }
   }
