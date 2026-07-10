@@ -6,7 +6,7 @@
   const STORAGE_KEY = "tyb_data_v1";
   const LANG_KEY = "tyb_lang";
   const CURRENCY = "EUR";
-  const APP_VERSION = "0.8.0"; // muss zur Version in package.json / tauri.conf.json passen
+  const APP_VERSION = "0.9.0"; // muss zur Version in package.json / tauri.conf.json passen
   const REPO_URL = "https://github.com/olekslev69/sparblick";
 
   /* ---------- Sprache / i18n ---------- */
@@ -26,6 +26,8 @@
       label_name: "Bezeichnung", label_amount: "Betrag (€)", label_interval: "Intervall",
       label_person: "Person", label_category: "Kategorie", label_next_due: "Nächste Fälligkeit (optional)",
       label_note: "Notiz (optional)", label_name_plain: "Name", label_color: "Farbe", label_type: "Art",
+      label_contract_end: "Vertragsende (optional)", label_notice: "Kündigungsfrist",
+      notice_none: "keine / unbekannt", month_one: "Monat", month_many: "Monate",
       // Intervalle
       iv_woechentlich: "wöchentlich", iv_monatlich: "monatlich", iv_quartalsweise: "quartalsweise",
       iv_halbjaehrlich: "halbjährlich", iv_jaehrlich: "jährlich",
@@ -48,6 +50,11 @@
       // Fälligkeit
       due_today: "heute fällig", due_tomorrow: "morgen fällig", due_in_days: "in {n} Tagen",
       due_prefix: "fällig {date}",
+      // Kündigungsfristen
+      cancel_deadlines_title: "Kündigungsfristen",
+      cancel_by: "kündbar bis {date}", contract_end_meta: "Vertragsende {date}",
+      cancel_today: "heute kündigen!", cancel_tomorrow: "bis morgen kündigen", cancel_in_days: "noch {n} Tage",
+      cancel_tag: "Kündigen bis {date}",
       // Einnahmen
       income_sub: "Deine monatlichen Einnahmen — auch pro Person erfassbar.", add_income: "+ Einnahme",
       no_income_title: "Noch keine Einnahmen.", no_income_text: "Trage z. B. dein Gehalt ein.",
@@ -90,8 +97,9 @@
       category_reassign_confirm: "Diese Kategorie hat {n} Ausgabe(n). Sie werden zu {fallback} verschoben. Fortfahren?",
       delete_category_confirm: "Diese Kategorie löschen?", ph_category: "z. B. Freizeit",
       // Personen
-      people_sub: "Wer teilt sich das Budget? Grundlage für später getrennte Profile.",
+      people_sub: "Wer teilt sich das Budget? Auch Kinder mit Taschengeld und eigenen Sparzielen.",
       add_person: "+ Person", person_counts: "{e} Einnahme(n) · {z} Ausgabe(n)",
+      ptype_erwachsen: "Erwachsene:r", ptype_kind: "Kind", tag_kind: "Kind",
       new_person: "Neue Person", edit_person: "Person bearbeiten", person_added: "Person hinzugefügt",
       min_one_person: "Mindestens eine Person muss bleiben",
       person_reassign_confirm: "Diese Person ist {n}× zugeordnet. Ihre Einträge werden {fallback} zugewiesen. Fortfahren?",
@@ -99,15 +107,19 @@
       // Aufteilung (Paare / Familien / WG)
       split_sub: "Gemeinsame Ausgaben fair auf die Personen aufteilen (Werte pro Monat).",
       split_settings_title: "So wird aufgeteilt",
-      split_settings_text: "Wenn aktiv, werden die Ausgaben des gemeinsamen Topfs zu gleichen Teilen (50/50) auf die übrigen Personen verteilt. Für WGs, die nicht fair teilen, einfach aus lassen.",
-      split_toggle_label: "Gemeinsame Ausgaben 50/50 aufteilen",
+      split_settings_text: "Wenn aktiv, werden die Ausgaben des gemeinsamen Topfs auf die übrigen erwachsenen Personen verteilt – zu gleichen Teilen (50/50) oder anteilig nach Einkommen. Kinder zahlen nicht mit.",
+      split_toggle_label: "Gemeinsame Ausgaben aufteilen",
+      split_mode_equal: "50/50 (gleich)", split_mode_income: "Nach Einkommen",
       split_shared_person: "Gemeinsamer Topf",
       split_empty_title: "Noch keine Aufteilung möglich",
-      split_empty_text: "Füge im Tab Personen eine zweite Person hinzu, um gemeinsame Ausgaben aufzuteilen.",
+      split_empty_text: "Füge im Tab Personen eine zweite erwachsene Person hinzu, um gemeinsame Ausgaben aufzuteilen.",
       split_own: "Eigene Ausgaben",
-      split_shared_line: "Anteil gemeinsam (50/50)",
+      split_shared_line: "Anteil gemeinsam",
       split_summary: "Gemeinsame Ausgaben: {pot} · 50/50 auf {n} Personen — je {each}",
+      split_summary_income: "Gemeinsame Ausgaben: {pot} · anteilig nach Einkommen auf {n} Personen",
+      split_kids_note: "Kinder zahlen nicht mit – ihnen wird kein Anteil des gemeinsamen Topfs zugerechnet.",
       per_person_split_note: "Gemeinsame Ausgaben sind 50/50 aufgeteilt.",
+      per_person_split_note_income: "Gemeinsame Ausgaben sind anteilig nach Einkommen aufgeteilt.",
       split_prompt_title: "Gemeinsame Ausgaben aufteilen?",
       split_prompt: "Sollen gemeinsame Ausgaben automatisch 50/50 auf die Personen aufgeteilt werden? Später jederzeit im Tab Aufteilung änderbar.",
       split_prompt_yes: "Ja, 50/50 aufteilen", split_prompt_no: "Nein, danke",
@@ -121,6 +133,14 @@
       csv_text: "Export als CSV-Datei zum Öffnen in Excel, Numbers oder Google Sheets – z. B. um das Budget gemeinsam durchzugehen oder an eine Steuerberatung weiterzugeben. Nur für den Export gedacht; für Backups und die Übertragung zwischen Geräten das JSON-Format verwenden.",
       csv_type: "Art", csv_active: "Aktiv", csv_target: "Zielbetrag", csv_current_amount: "Stand",
       csv_yes: "Ja", csv_no: "Nein",
+      csv_contract_end: "Vertragsende", csv_notice_months: "Kündigungsfrist (Monate)",
+      print_title: "Drucken / PDF",
+      print_text: "Eine übersichtliche Zusammenfassung auf einer Seite – für das monatliche Familiengespräch oder die Steuerberatung. Über den Druckdialog lässt sie sich auch als PDF speichern.",
+      print_btn: " Übersicht drucken",
+      print_summary_title: "Budget-Übersicht",
+      printed_on: "Stand: {date}",
+      print_footer: "Erstellt mit Sparblick – alle Daten liegen lokal.",
+      col_pct_income: "% der Einnahmen",
       current_status: "Aktueller Stand", st_income: "Einnahmen", st_payments: "Ausgaben",
       st_savings: "Sparraten", st_categories: "Kategorien", st_income_month: "Einnahmen / Monat",
       st_costs_month: "Ausgaben / Monat", st_savings_month: "Sparen / Monat",
@@ -178,6 +198,8 @@
       label_name: "Label", label_amount: "Amount (€)", label_interval: "Interval",
       label_person: "Person", label_category: "Category", label_next_due: "Next due date (optional)",
       label_note: "Note (optional)", label_name_plain: "Name", label_color: "Color", label_type: "Type",
+      label_contract_end: "Contract end (optional)", label_notice: "Notice period",
+      notice_none: "none / unknown", month_one: "month", month_many: "months",
       iv_woechentlich: "weekly", iv_monatlich: "monthly", iv_quartalsweise: "quarterly",
       iv_halbjaehrlich: "half-yearly", iv_jaehrlich: "yearly",
       art_etf: "ETF / Funds", art_aktien: "Stocks", art_sparkonto: "Savings account",
@@ -196,6 +218,10 @@
       pp_costs: "Expenses", free_short: "Available", no_category: "No category",
       due_today: "due today", due_tomorrow: "due tomorrow", due_in_days: "in {n} days",
       due_prefix: "due {date}",
+      cancel_deadlines_title: "Cancellation deadlines",
+      cancel_by: "cancel by {date}", contract_end_meta: "contract ends {date}",
+      cancel_today: "cancel today!", cancel_tomorrow: "cancel by tomorrow", cancel_in_days: "{n} days left",
+      cancel_tag: "Cancel by {date}",
       income_sub: "Your monthly income — also per person.", add_income: "+ Income",
       no_income_title: "No income yet.", no_income_text: "Add your salary, for example.",
       per_month_slash: "/ month", new_income: "New income", edit_income: "Edit income",
@@ -233,8 +259,9 @@
       category_added: "Category added", min_one_category: "At least one category must remain",
       category_reassign_confirm: "This category has {n} expense(s). They will be moved to {fallback}. Continue?",
       delete_category_confirm: "Delete this category?", ph_category: "e.g. Leisure",
-      people_sub: "Who shares the budget? Basis for separate profiles later.",
+      people_sub: "Who shares the budget? Kids with pocket money and their own goals, too.",
       add_person: "+ Person", person_counts: "{e} income · {z} expense(s)",
+      ptype_erwachsen: "Adult", ptype_kind: "Child", tag_kind: "Child",
       new_person: "New person", edit_person: "Edit person", person_added: "Person added",
       min_one_person: "At least one person must remain",
       person_reassign_confirm: "This person is assigned {n}×. Their entries will be reassigned to {fallback}. Continue?",
@@ -242,15 +269,19 @@
       // Split (couples / families / shared flats)
       split_sub: "Split shared expenses fairly across people (values per month).",
       split_settings_title: "How splitting works",
-      split_settings_text: "When on, the shared pot's expenses are split equally (50/50) across the other people. For shared flats that don't split fairly, just leave it off.",
-      split_toggle_label: "Split shared expenses 50/50",
+      split_settings_text: "When on, the shared pot's expenses are split across the other adults – equally (50/50) or in proportion to income. Kids don't pay a share.",
+      split_toggle_label: "Split shared expenses",
+      split_mode_equal: "50/50 (equal)", split_mode_income: "By income",
       split_shared_person: "Shared pot",
       split_empty_title: "Nothing to split yet",
-      split_empty_text: "Add a second person under \"People\" to split shared expenses.",
+      split_empty_text: "Add a second adult under \"People\" to split shared expenses.",
       split_own: "Own expenses",
-      split_shared_line: "Shared share (50/50)",
+      split_shared_line: "Shared share",
       split_summary: "Shared expenses: {pot} · 50/50 across {n} people — {each} each",
+      split_summary_income: "Shared expenses: {pot} · split by income across {n} people",
+      split_kids_note: "Kids don't pay – no share of the shared pot is assigned to them.",
       per_person_split_note: "Shared expenses are split 50/50.",
+      per_person_split_note_income: "Shared expenses are split in proportion to income.",
       split_prompt_title: "Split shared expenses?",
       split_prompt: "Split shared expenses 50/50 across people automatically? You can change this anytime under \"Split\".",
       split_prompt_yes: "Yes, split 50/50", split_prompt_no: "No thanks",
@@ -263,6 +294,14 @@
       csv_text: "Export as a CSV file to open in Excel, Numbers or Google Sheets – e.g. to go through the budget together as a family or hand it to an accountant. For export only; use the JSON format for backups and transferring between devices.",
       csv_type: "Type", csv_active: "Active", csv_target: "Target amount", csv_current_amount: "Current amount",
       csv_yes: "Yes", csv_no: "No",
+      csv_contract_end: "Contract end", csv_notice_months: "Notice period (months)",
+      print_title: "Print / PDF",
+      print_text: "A clean one-page summary – for the monthly family finance talk or your accountant. Use the print dialog to save it as a PDF.",
+      print_btn: " Print summary",
+      print_summary_title: "Budget summary",
+      printed_on: "As of {date}",
+      print_footer: "Created with Sparblick – all data stays local.",
+      col_pct_income: "% of income",
       current_status: "Current status", st_income: "Income entries", st_payments: "Expenses",
       st_savings: "Savings plans", st_categories: "Categories", st_income_month: "Income / month",
       st_costs_month: "Expenses / month", st_savings_month: "Savings / month",
@@ -365,7 +404,7 @@
       sparplaene: [],
       sparziele: [], // Sparziele mit Zielbetrag + angespartem Stand (Einzahlungen)
       // Haushalts-Einstellungen (Teil der Daten, werden mit exportiert/importiert).
-      settings: { splitShared: false, sharedPersonId: "p_gemeinsam", splitPrompted: false },
+      settings: { splitShared: false, splitMode: "equal", sharedPersonId: "p_gemeinsam", splitPrompted: false },
     };
   }
 
@@ -406,7 +445,7 @@
       zahlungen: Array.isArray(d.zahlungen) ? d.zahlungen : [],
       sparplaene: Array.isArray(d.sparplaene) ? d.sparplaene : [],
       sparziele: Array.isArray(d.sparziele) ? d.sparziele : [],
-      settings: { splitShared: !!s.splitShared, sharedPersonId, splitPrompted: !!s.splitPrompted },
+      settings: { splitShared: !!s.splitShared, splitMode: s.splitMode === "income" ? "income" : "equal", sharedPersonId, splitPrompted: !!s.splitPrompted },
     };
   }
 
@@ -446,6 +485,7 @@
     play: '<path d="M7 4l13 8-13 8z"/>',
     download: '<path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/>',
     upload: '<path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/>',
+    printer: '<path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
   };
   function icon(name) {
@@ -521,6 +561,24 @@
     return t("due_in_days", { n: days });
   }
 
+  // Kündigungsfrist: Stichtag, bis zu dem gekündigt werden muss
+  // (Vertragsende minus Frist in Monaten).
+  function cancelDeadline(z) {
+    const end = parseISO(z.vertragsende);
+    if (!end) return null;
+    const d = new Date(end);
+    d.setMonth(d.getMonth() - (Number(z.kuendigungsfristMonate) || 0));
+    // Monatsüberlauf (z. B. 31.12. − 3 Monate = "31.09.") auf das Monatsende zurückrunden,
+    // sonst würde ein späterer Stichtag angezeigt als tatsächlich gilt.
+    if (d.getDate() !== end.getDate()) d.setDate(0);
+    return d;
+  }
+  function cancelText(days) {
+    if (days <= 0) return t("cancel_today");
+    if (days === 1) return t("cancel_tomorrow");
+    return t("cancel_in_days", { n: days });
+  }
+
   function personName(id) {
     const p = state.personen.find((x) => x.id === id);
     return p ? p.name : "—";
@@ -573,8 +631,9 @@
   }
 
   // Fairer Anteil je Person (Monatswerte, ohne personFilter). Bei aktivem Split werden
-  // die Ausgaben der "gemeinsamen" Person (settings.sharedPersonId) zu gleichen Teilen
-  // (50/50) auf die individuellen Personen verteilt.
+  // die Ausgaben der "gemeinsamen" Person (settings.sharedPersonId) auf die erwachsenen
+  // Personen verteilt – zu gleichen Teilen (50/50) oder anteilig nach Einkommen
+  // (settings.splitMode). Kinder zahlen nicht mit (kein Anteil am gemeinsamen Topf).
   function personShares() {
     const sumBy = (arr, id) => arr.filter((x) => x.person === id).reduce((s, x) => s + monthly(x), 0);
     const activeZ = state.zahlungen.filter((z) => z.aktiv !== false);
@@ -582,15 +641,25 @@
     const sharedId = state.settings ? state.settings.sharedPersonId : "";
     const shared = !!(state.settings && state.settings.splitShared) && sharedId && state.personen.some((p) => p.id === sharedId);
     const individuals = state.personen.filter((p) => !(shared && p.id === sharedId));
+    const payers = individuals.filter((p) => p.typ !== "kind");
     const pot = shared ? sumBy(activeZ, sharedId) : 0;
-    const share = shared && individuals.length ? pot / individuals.length : 0;
+    const incomeOf = {};
+    individuals.forEach((p) => { incomeOf[p.id] = sumBy(state.einnahmen, p.id); });
+    const payerIncome = payers.reduce((s, p) => s + incomeOf[p.id], 0);
+    // "Nach Einkommen" nur, wenn es überhaupt Einkommen gibt – sonst zurück auf 50/50.
+    const byIncome = state.settings && state.settings.splitMode === "income" && payerIncome > 0;
     return individuals.map((p) => {
-      const income = sumBy(state.einnahmen, p.id);
+      const isKind = p.typ === "kind";
+      const income = incomeOf[p.id];
+      let pctShare = 0;
+      if (shared && !isKind && payers.length) {
+        pctShare = byIncome ? income / payerIncome : 1 / payers.length;
+      }
       const expensesOwn = sumBy(activeZ, p.id);
-      const expensesShared = shared ? share : 0;
+      const expensesShared = pot * pctShare;
       const expenses = expensesOwn + expensesShared;
       const savings = sumBy(activeS, p.id);
-      return { personId: p.id, name: p.name, income, expensesOwn, expensesShared, expenses, savings, free: income - expenses - savings };
+      return { personId: p.id, name: p.name, isKind, income, expensesOwn, expensesShared, pctShare, expenses, savings, free: income - expenses - savings };
     });
   }
 
@@ -665,6 +734,7 @@
     );
 
     renderFaelligkeiten(root);
+    renderKuendigungen(root);
 
     if (c.costs === 0) {
       root.appendChild(emptyState(t("no_payments_yet_title"), t("no_payments_yet_text")));
@@ -689,7 +759,7 @@
       const cards = personShares().map((ps) => {
         if (ps.income === 0 && ps.expenses === 0 && ps.savings === 0) return null;
         return el("div", { class: "card person-card" },
-          el("h4", {}, ps.name),
+          el("h4", {}, ps.name, ps.isKind ? el("span", { class: "tag muted", style: "margin-left:8px" }, t("tag_kind")) : null),
           el("div", { class: "line" }, el("span", {}, t("income")), el("b", {}, fmt(ps.income * f))),
           el("div", { class: "line" }, el("span", {}, t("pp_costs")), el("b", {}, fmt(ps.expenses * f))),
           el("div", { class: "line" }, el("span", {}, t("savings")), el("b", {}, fmt(ps.savings * f))),
@@ -699,7 +769,9 @@
       if (cards.length) {
         root.appendChild(el("div", { class: "section-head", style: "margin-top:26px" },
           el("div", {}, el("h2", { style: "font-size:1.05rem" }, t("per_person")),
-            el("p", {}, split ? t("per_person_split_note") : t("per_person_sub")))));
+            el("p", {}, split
+              ? t(state.settings.splitMode === "income" ? "per_person_split_note_income" : "per_person_split_note")
+              : t("per_person_sub")))));
         root.appendChild(el("div", { class: "person-cards" }, ...cards));
       }
     }
@@ -729,6 +801,36 @@
             el("div", { class: "meta" }, dateFmtFn(due) + " · " + intervalLabel(z.intervall))),
           el("span", { class: "due-badge " + urg }, faelligkeitText(days)),
           el("span", { class: "due-amount" }, fmt(Number(z.betrag) || 0)));
+      })))
+    );
+  }
+
+  // Bereich "Kündigungsfristen" (Verträge mit Vertragsende; Frist = kündbar bis)
+  function renderKuendigungen(root) {
+    const items = state.zahlungen
+      .filter((z) => z.aktiv !== false).filter(matchesPerson)
+      .map((z) => ({ z, deadline: cancelDeadline(z) }))
+      .filter((x) => x.deadline && daysUntil(x.deadline) >= 0)
+      .sort((a, b) => a.deadline - b.deadline)
+      .slice(0, 6);
+    if (!items.length) return;
+
+    root.appendChild(el("div", { class: "card", style: "margin-top:20px" },
+      el("div", { class: "section-head", style: "margin-bottom:14px" },
+        el("h2", { style: "font-size:1.05rem" }, t("cancel_deadlines_title"))),
+      el("div", { class: "due-list" }, ...items.map(({ z, deadline }) => {
+        const days = daysUntil(deadline);
+        const k = kategorieById(z.kategorieId);
+        const urg = days <= 14 ? "due-soon" : days <= 60 ? "due-near" : "";
+        const end = parseISO(z.vertragsende);
+        return el("div", { class: "due-row" },
+          el("span", { class: "dot", style: "background:" + (k ? k.farbe : "#64748b") }),
+          el("div", { class: "due-main" },
+            el("div", { class: "due-name" }, z.bezeichnung || t("default_payment_name")),
+            el("div", { class: "meta" }, t("cancel_by", { date: dateFmtFn(deadline) })
+              + (end ? " · " + t("contract_end_meta", { date: dateFmtFn(end) }) : ""))),
+          el("span", { class: "due-badge " + urg }, cancelText(days)),
+          el("span", { class: "due-amount" }, fmt(monthly(z))));
       })))
     );
   }
@@ -913,6 +1015,8 @@
       const k = kategorieById(z.kategorieId);
       const due = z.aktiv !== false ? nextDue(z) : null;
       const dueDays = due ? daysUntil(due) : null;
+      const deadline = z.aktiv !== false ? cancelDeadline(z) : null;
+      const dlDays = deadline ? daysUntil(deadline) : null;
       container.appendChild(el("div", { class: "item" + (z.aktiv === false ? " inactive" : "") },
         el("span", { class: "swatch", style: "background:" + (k ? k.farbe : "#64748b") }),
         el("div", { class: "main" },
@@ -920,9 +1024,11 @@
             k ? el("span", { class: "tag" }, k.name) : null,
             z.aktiv === false ? el("span", { class: "tag muted" }, t("tag_paused")) : null,
             due && dueDays <= 7 ? el("span", { class: "tag warn" }, faelligkeitText(dueDays)) : null,
+            deadline && dlDays >= 0 && dlDays <= 60 ? el("span", { class: "tag warn" }, t("cancel_tag", { date: dateFmtFn(deadline) })) : null,
             el("span", { class: "tag muted" }, personName(z.person))),
           el("div", { class: "meta" }, intervalLabel(z.intervall)
             + (due ? " · " + t("due_prefix", { date: dateFmtFn(due) }) : "")
+            + (deadline && dlDays >= 0 ? " · " + t("cancel_by", { date: dateFmtFn(deadline) }) : "")
             + (z.notiz ? " · " + z.notiz : ""))),
         el("div", { class: "value" }, fmt(monthly(z)),
           el("small", {}, z.intervall !== "monatlich" ? fmt(z.betrag) + " " + intervalLabel(z.intervall) : t("per_month_slash"))),
@@ -949,11 +1055,16 @@
       el("div", { class: "field-row" },
         dateField("faellig", t("label_next_due"), z.faellig),
         textField("notiz", t("label_note"), z.notiz, t("ph_note_contract"))),
+      el("div", { class: "field-row" },
+        dateField("vertragsende", t("label_contract_end"), z.vertragsende),
+        selectField("kuendigungsfrist", t("label_notice"), noticeOptions(), String(z.kuendigungsfristMonate || ""))),
     ], (vals) => {
       if (!vals.betrag) { toast(t("amount_required")); return false; }
       const rec = { id: z.id, bezeichnung: vals.bezeichnung.trim() || t("default_payment_name"), betrag: Number(vals.betrag),
         intervall: vals.intervall, kategorieId: vals.kategorieId, person: vals.person, notiz: vals.notiz.trim(),
-        faellig: vals.faellig || "", aktiv: z.aktiv !== false };
+        faellig: vals.faellig || "", aktiv: z.aktiv !== false,
+        vertragsende: vals.vertragsende || "", kuendigungsfristMonate: vals.kuendigungsfrist ? Number(vals.kuendigungsfrist) : "",
+        importKey: z.importKey || "" }; // Import-Herkunft beim Bearbeiten nicht verlieren (Re-Import-Erkennung)
       const i = state.zahlungen.findIndex((x) => x.id === z.id);
       if (i >= 0) state.zahlungen[i] = rec; else state.zahlungen.push(rec);
       save(); render(); toast(isNew ? t("payment_added") : t("saved"));
@@ -1176,7 +1287,8 @@
       return el("div", { class: "item" },
         el("span", { class: "swatch", style: "background:var(--primary)" }),
         el("div", { class: "main" },
-          el("div", { class: "title" }, p.name),
+          el("div", { class: "title" }, p.name,
+            p.typ === "kind" ? el("span", { class: "tag muted" }, t("tag_kind")) : null),
           el("div", { class: "meta" }, t("person_counts", { e: einn, z: zahl }))),
         el("div", { class: "value" }, ""),
         el("div", { class: "actions" },
@@ -1191,10 +1303,13 @@
     const p = entry || { id: uid("p"), name: "" };
     openModal(isNew ? t("new_person") : t("edit_person"), [
       textField("name", t("label_name_plain"), p.name, t("ph_person")),
+      selectField("typ", t("label_type"), [["erwachsen", t("ptype_erwachsen")], ["kind", t("ptype_kind")]],
+        p.typ === "kind" ? "kind" : "erwachsen"),
     ], (vals) => {
       const name = vals.name.trim();
       if (!name) { toast(t("name_required")); return false; }
       const rec = { id: p.id, name };
+      if (vals.typ === "kind") rec.typ = "kind";
       const i = state.personen.findIndex((x) => x.id === p.id);
       if (i >= 0) state.personen[i] = rec; else state.personen.push(rec);
       save(); render(); toast(isNew ? t("person_added") : t("saved"));
@@ -1238,34 +1353,51 @@
     });
     sharedSel.addEventListener("change", () => { settings.sharedPersonId = sharedSel.value; save(); render(); });
 
+    // Modus: 50/50 oder anteilig nach Einkommen (nur sichtbar bei aktiver Aufteilung)
+    const modeSeg = settings.splitShared ? el("div", { style: "margin-top:12px" },
+      el("div", { class: "seg" },
+        el("button", { class: settings.splitMode !== "income" ? "active" : "",
+          onclick: () => { settings.splitMode = "equal"; save(); render(); } }, t("split_mode_equal")),
+        el("button", { class: settings.splitMode === "income" ? "active" : "",
+          onclick: () => { settings.splitMode = "income"; save(); render(); } }, t("split_mode_income")))) : null;
+
     root.appendChild(el("div", { class: "card" },
       el("h3", { style: "margin:0 0 6px" }, t("split_settings_title")),
       el("p", { class: "hint", style: "margin:0 0 12px" }, t("split_settings_text")),
       el("label", { class: "split-toggle" }, toggle, el("span", {}, t("split_toggle_label"))),
+      modeSeg,
       el("div", { class: "field", style: "margin-top:12px;max-width:280px" },
         el("label", {}, t("split_shared_person")), sharedSel)
     ));
 
     const sharedId = settings.sharedPersonId;
-    const individualCount = state.personen.filter((p) => !(settings.splitShared && p.id === sharedId)).length;
-    if (individualCount < 2) {
+    const payerCount = state.personen.filter((p) => !(settings.splitShared && p.id === sharedId) && p.typ !== "kind").length;
+    if (payerCount < 2) {
       root.appendChild(emptyState(t("split_empty_title"), t("split_empty_text")));
       return;
     }
 
     const shares = personShares();
+    const payers = shares.filter((ps) => !ps.isKind);
     // Zusammenfassung des gemeinsamen Topfs (nur bei aktiver Aufteilung)
     if (settings.splitShared) {
       const pot = state.zahlungen.filter((z) => z.aktiv !== false && z.person === sharedId).reduce((s, z) => s + monthly(z), 0);
-      root.appendChild(el("p", { class: "filter-summary", style: "margin:16px 2px 4px" },
-        t("split_summary", { pot: fmt(pot), n: shares.length, each: fmt(shares.length ? pot / shares.length : 0) })));
+      const line = settings.splitMode === "income"
+        ? t("split_summary_income", { pot: fmt(pot), n: payers.length })
+        : t("split_summary", { pot: fmt(pot), n: payers.length, each: fmt(payers.length ? pot / payers.length : 0) });
+      root.appendChild(el("p", { class: "filter-summary", style: "margin:16px 2px 4px" }, line));
+      if (shares.some((ps) => ps.isKind)) {
+        root.appendChild(el("p", { class: "hint", style: "margin:0 2px 4px" }, t("split_kids_note")));
+      }
     }
 
-    const cards = shares.map((ps) => el("div", { class: "card person-card" },
+    const cards = payers.map((ps) => el("div", { class: "card person-card" },
       el("h4", {}, ps.name),
       el("div", { class: "line" }, el("span", {}, t("income")), el("b", {}, fmt(ps.income))),
       el("div", { class: "line" }, el("span", {}, t("split_own")), el("b", {}, fmt(ps.expensesOwn))),
-      settings.splitShared ? el("div", { class: "line" }, el("span", {}, t("split_shared_line")), el("b", {}, fmt(ps.expensesShared))) : null,
+      settings.splitShared ? el("div", { class: "line" },
+        el("span", {}, t("split_shared_line") + " (" + fmtPct(ps.pctShare) + ")"),
+        el("b", {}, fmt(ps.expensesShared))) : null,
       el("div", { class: "line", style: "font-weight:700;border-top:1px solid var(--border);padding-top:8px;margin-top:2px" },
         el("span", {}, t("pp_costs")), el("b", {}, fmt(ps.expenses))),
       el("div", { class: "line" }, el("span", {}, t("savings")), el("b", {}, fmt(ps.savings))),
@@ -1278,7 +1410,7 @@
   function maybePromptSplit() {
     const s = state.settings;
     if (!s || s.splitShared || s.splitPrompted) return;
-    const individuals = state.personen.filter((p) => p.id !== s.sharedPersonId);
+    const individuals = state.personen.filter((p) => p.id !== s.sharedPersonId && p.typ !== "kind");
     if (individuals.length < 2) return;
     s.splitPrompted = true; save();
     openChoice(t("split_prompt_title"), t("split_prompt"), [
@@ -1304,6 +1436,13 @@
       el("p", { class: "hint", style: "margin:0" }, t("csv_text")),
       el("div", { class: "data-actions" },
         el("button", { class: "btn", onclick: exportCsv }, icon("download"), t("export_csv")))
+    ));
+
+    root.appendChild(el("div", { class: "card", style: "margin-top:18px" },
+      el("h3", { style: "margin:0 0 6px" }, t("print_title")),
+      el("p", { class: "hint", style: "margin:0" }, t("print_text")),
+      el("div", { class: "data-actions" },
+        el("button", { class: "btn", onclick: printSummary }, icon("printer"), t("print_btn")))
     ));
 
     root.appendChild(el("div", { class: "card", style: "margin-top:18px" },
@@ -1416,11 +1555,12 @@
 
     lines.push("");
     lines.push(csvRow([t("tab_zahlungen")]));
-    lines.push(csvRow([t("label_name"), t("label_amount"), t("label_interval"), t("label_category"), t("label_person"), t("csv_active"), t("label_next_due"), t("label_note")]));
+    lines.push(csvRow([t("label_name"), t("label_amount"), t("label_interval"), t("label_category"), t("label_person"), t("csv_active"), t("label_next_due"), t("csv_contract_end"), t("csv_notice_months"), t("label_note")]));
     for (const z of state.zahlungen) {
       const k = kategorieById(z.kategorieId);
       lines.push(csvRow([z.bezeichnung || t("default_payment_name"), csvNum(z.betrag), intervalLabel(z.intervall),
-        k ? k.name : t("no_category"), personName(z.person), yn(z.aktiv !== false), z.faellig || "", z.notiz || ""]));
+        k ? k.name : t("no_category"), personName(z.person), yn(z.aktiv !== false), z.faellig || "",
+        z.vertragsende || "", z.kuendigungsfristMonate || "", z.notiz || ""]));
     }
 
     lines.push("");
@@ -1444,6 +1584,67 @@
     if (await saveTextFile("sparblick-export.csv", "text/csv", exportCsvText())) {
       toast(t("export_done"));
     }
+  }
+
+  /* ----- Druck / PDF: Ein-Seiten-Zusammenfassung (#printRoot, per @media print sichtbar) ----- */
+  function printTable(headers, rows) {
+    return el("table", { class: "print-table" },
+      el("thead", {}, el("tr", {}, ...headers.map((h) => el("th", {}, h)))),
+      el("tbody", {}, ...rows.map((r) => el("tr", {}, ...r.map((c) => el("td", {}, c))))));
+  }
+  function printSummary() {
+    const root = $("#printRoot");
+    root.innerHTML = "";
+    const c = calc();
+
+    const parts = [
+      el("h1", {}, "Sparblick – " + t("print_summary_title")),
+      el("p", { class: "print-meta" }, t("printed_on", { date: dateFmtFn(new Date()) })
+        + (c.income > 0 ? " · " + t("savings_rate", { pct: fmtPct(c.savings / c.income) }) : "")),
+      printTable(["", t("per_month"), t("per_year")],
+        [[t("income"), fmt(c.income), fmt(c.income * 12)],
+         [t("fixed_costs"), fmt(c.costs), fmt(c.costs * 12)],
+         [t("savings"), fmt(c.savings), fmt(c.savings * 12)],
+         [t("free_available"), fmt(c.rest), fmt(c.rest * 12)]]),
+    ];
+
+    if (c.catRows.length) {
+      parts.push(el("h2", {}, t("by_category")));
+      parts.push(printTable([t("label_category"), t("per_month"), t("col_pct_income")],
+        c.catRows.map((r) => [r.name, fmt(r.amount), c.income > 0 ? fmtPct(r.pctIncome) : fmtPct(r.pctCosts)])));
+    }
+
+    const shares = personShares().filter((ps) => ps.income || ps.expenses || ps.savings);
+    if (shares.length > 1) {
+      parts.push(el("h2", {}, t("per_person")));
+      parts.push(printTable([t("label_person"), t("income"), t("pp_costs"), t("savings"), t("free_short")],
+        shares.map((ps) => [ps.name + (ps.isKind ? " (" + t("tag_kind") + ")" : ""),
+          fmt(ps.income), fmt(ps.expenses), fmt(ps.savings), fmt(ps.free)])));
+    }
+
+    const dues = state.zahlungen.filter((z) => z.aktiv !== false)
+      .map((z) => ({ z, due: nextDue(z) })).filter((x) => x.due)
+      .sort((a, b) => a.due - b.due).slice(0, 6);
+    if (dues.length) {
+      parts.push(el("h2", {}, t("upcoming_due")));
+      parts.push(printTable([t("label_name"), "", t("label_amount")],
+        dues.map(({ z, due }) => [z.bezeichnung || t("default_payment_name"), dateFmtFn(due), fmt(Number(z.betrag) || 0)])));
+    }
+
+    const cancels = state.zahlungen.filter((z) => z.aktiv !== false)
+      .map((z) => ({ z, deadline: cancelDeadline(z) }))
+      .filter((x) => x.deadline && daysUntil(x.deadline) >= 0)
+      .sort((a, b) => a.deadline - b.deadline).slice(0, 6);
+    if (cancels.length) {
+      parts.push(el("h2", {}, t("cancel_deadlines_title")));
+      parts.push(printTable([t("label_name"), "", t("label_amount")],
+        cancels.map(({ z, deadline }) => [z.bezeichnung || t("default_payment_name"),
+          t("cancel_by", { date: dateFmtFn(deadline) }), fmt(monthly(z))])));
+    }
+
+    parts.push(el("p", { class: "print-footer" }, t("print_footer")));
+    parts.forEach((p) => root.appendChild(p));
+    window.print();
   }
   function startImport() {
     openTextFile(["json"], (text) => {
@@ -1922,6 +2123,11 @@
   }
   function personOptions() {
     return state.personen.map((p) => [p.id, p.name]);
+  }
+  function noticeOptions() {
+    const opts = [["", t("notice_none")]];
+    for (const m of [1, 2, 3, 4, 5, 6, 12]) opts.push([String(m), m + " " + (m === 1 ? t("month_one") : t("month_many"))]);
+    return opts;
   }
 
   function textField(name, label, value, placeholder) {

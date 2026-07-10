@@ -50,14 +50,18 @@ ist und sichtbar „🎉 Ziel erreicht" markiert wird (frei erfundene Beispielda
   Einnahmen. Per **Umschalter Monat / Jahr** lassen sich alle Beträge auf Monats- oder
   Jahresbasis anzeigen (Jahresübersicht = was alle Verträge pro Jahr kosten).
   Ein Bereich **„Demnächst fällig"** zeigt anstehende Ausgaben mit Datum und
-  farbiger Dringlichkeit.
+  farbiger Dringlichkeit; ein Bereich **„Kündigungsfristen"** warnt rechtzeitig vor
+  Verträgen, die gekündigt werden müssen, bevor sie sich verlängern.
 - **Einnahmen:** mehrere Einnahmequellen, auch pro Person.
 - **Ausgaben & Verträge:** Betrag, Intervall (wöchentlich, monatlich, quartals­weise,
   halbjährlich, jährlich), Kategorie, optionales **Fälligkeitsdatum** und Notiz. Alle
   Beträge werden automatisch auf einen **Monatswert** umgerechnet; das nächste
   Fälligkeitsdatum rollt automatisch anhand des Intervalls in die Zukunft. Ausgaben
   lassen sich pausieren. Die Liste ist per **Suche, Kategorie und Sortierung filterbar**;
-  eine Summenzeile zeigt Monats- und Jahreskosten der Auswahl.
+  eine Summenzeile zeigt Monats- und Jahreskosten der Auswahl. Optional lassen sich
+  **Vertragsende und Kündigungsfrist** hinterlegen – die App errechnet den Stichtag
+  („kündbar bis …"), markiert Verträge in der Liste und warnt auf der Übersicht,
+  bevor sich ein Vertrag automatisch verlängert.
 - **Sparen & Anlegen:** regelmäßige Sparraten (z. B. ETF-Sparpläne, Tagesgeld,
   Altersvorsorge, Krypto) mit Betrag, Intervall, Art und Person. Fließt als echte
   Sparquote und „frei verfügbar" ins Dashboard ein.
@@ -72,13 +76,16 @@ ist und sichtbar „🎉 Ziel erreicht" markiert wird (frei erfundene Beispielda
   oben rechts lässt sich alles zusammen oder pro Person betrachten – die Grundlage für
   später vollständig getrennte Budgets. Beim Löschen einer Person werden ihre Einträge
   automatisch einer anderen Person zugewiesen (keine Daten gehen verloren).
+  Personen können als **Kind** markiert werden – ideal für **Taschengeld** (als Einnahme
+  des Kindes) und eigene Sparziele; Kinder zahlen bei der Aufteilung nicht mit.
 - **Aufteilung (Paare, Familien, WGs):** Im Tab **Aufteilung** lassen sich gemeinsame Ausgaben
-  **optional 50/50** auf die Personen aufteilen. Ist die Aufteilung aktiv, werden die Ausgaben
-  des gemeinsamen Topfs (frei wählbar, Standard „Gemeinsam") zu gleichen Teilen auf die übrigen
-  Personen verteilt; jede Person sieht ihren **fairen Anteil** an den Haushaltskosten (eigene
-  Ausgaben + Anteil gemeinsam) sowie ihr frei Verfügbares. **Standardmäßig aus** – so bleibt für
-  **WGs**, die den gemeinsamen Topf nicht fair teilen, alles wie gehabt. Die Einstellung ist Teil
-  der Daten (wird mit exportiert/importiert).
+  optional auf die Personen aufteilen – wahlweise **50/50** oder **anteilig nach Einkommen**
+  (wer 75 % des Einkommens hat, trägt 75 % der gemeinsamen Kosten). Ist die Aufteilung aktiv,
+  werden die Ausgaben des gemeinsamen Topfs (frei wählbar, Standard „Gemeinsam") auf die übrigen
+  erwachsenen Personen verteilt; jede Person sieht ihren **fairen Anteil** an den Haushaltskosten
+  (eigene Ausgaben + Anteil gemeinsam) sowie ihr frei Verfügbares. **Standardmäßig aus** – so
+  bleibt für **WGs**, die den gemeinsamen Topf nicht fair teilen, alles wie gehabt. Die
+  Einstellung ist Teil der Daten (wird mit exportiert/importiert).
 - **Bank-Import (DKB, FYRST & Amex):** Unter **Daten** lässt sich eine **Umsatzliste (CSV)**
   einlesen – aktuell werden die Formate von **DKB**, **FYRST** und **American Express** erkannt
   (Amex mit umgekehrtem Vorzeichen: Gutschriften/Zahlungen werden korrekt ausgenommen). Die App
@@ -97,7 +104,9 @@ ist und sichtbar „🎉 Ziel erreicht" markiert wird (frei erfundene Beispielda
   **ersetzen** oder mit den importierten **zusammenführen** (ohne Duplikate) – ideal, um
   Handy und PC abzugleichen. Zusätzlich **CSV-Export** zum Öffnen in Excel, Numbers oder
   Google Sheets – z. B. um das Budget gemeinsam als Familie durchzugehen oder an eine
-  Steuerberatung weiterzugeben (reiner Export, für Backups weiterhin JSON verwenden).
+  Steuerberatung weiterzugeben (reiner Export, für Backups weiterhin JSON verwenden) –
+  sowie **Drucken / PDF**: eine übersichtliche Ein-Seiten-Zusammenfassung für das
+  monatliche Familiengespräch (über den Druckdialog auch als PDF speicherbar).
   Zurücksetzen.
 
 > Gemeinsame Alltagsausgaben (z. B. Lebensmittel) trägst du am einfachsten als eine
