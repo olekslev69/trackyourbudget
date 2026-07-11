@@ -7,7 +7,7 @@
   const LANG_KEY = "tyb_lang";
   const THEME_KEY = "tyb_theme";
   const CURRENCY = "EUR";
-  const APP_VERSION = "0.12.0"; // muss zur Version in package.json / tauri.conf.json + src/version.json passen
+  const APP_VERSION = "0.13.0"; // muss zur Version in package.json / tauri.conf.json + src/version.json passen
   const REPO_URL = "https://github.com/olekslev69/sparblick";
   const RELEASES_URL = REPO_URL + "/releases";
   // „Neueste Version" wird von GitHub Pages gelesen (auch aus der Desktop-App heraus).
@@ -54,6 +54,7 @@
       upcoming_due: "Demnächst fällig", per_person: "Pro Person",
       per_person_sub: "Grundlage für spätere getrennte Budgets",
       pp_costs: "Ausgaben", free_short: "Frei", no_category: "Ohne Kategorie",
+      change_category: "Kategorie ändern",
       // Fälligkeit
       due_today: "heute fällig", due_tomorrow: "morgen fällig", due_in_days: "in {n} Tagen",
       due_prefix: "fällig {date}",
@@ -243,6 +244,7 @@
       upcoming_due: "Upcoming", per_person: "Per person",
       per_person_sub: "Basis for separate budgets later",
       pp_costs: "Expenses", free_short: "Available", no_category: "No category",
+      change_category: "Change category",
       due_today: "due today", due_tomorrow: "due tomorrow", due_in_days: "in {n} days",
       due_prefix: "due {date}",
       cancel_deadlines_title: "Cancellation deadlines",
@@ -654,6 +656,7 @@
     upload: '<path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/>',
     printer: '<path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
+    check: '<path d="M20 6L9 17l-5-5"/>',
   };
   function icon(name) {
     const NS = "http://www.w3.org/2000/svg";
@@ -894,6 +897,7 @@
   }
 
   function render() {
+    closeCatMenu();
     localizeChrome();
     renderPersonFilter();
     document.querySelectorAll(".tab").forEach((tab) =>
@@ -1208,6 +1212,7 @@
   function paintZahlungList() {
     const container = $("#zahlungList");
     if (!container) return;
+    closeCatMenu();
     const list = filteredZahlungen();
     const sum = list.filter((z) => z.aktiv !== false).reduce((s, z) => s + monthly(z), 0);
     const summary = $("#zahlungSummary");
@@ -1227,10 +1232,14 @@
       const deadline = z.aktiv !== false ? cancelDeadline(z) : null;
       const dlDays = deadline ? daysUntil(deadline) : null;
       container.appendChild(el("div", { class: "item" + (z.aktiv === false ? " inactive" : "") },
-        el("span", { class: "swatch", style: "background:" + (k ? k.farbe : "#64748b") }),
+        el("button", { class: "swatch cat-swatch", title: t("change_category"),
+          style: "background:" + (k ? k.farbe : "#64748b"), onclick: (e) => openCatMenu(e.currentTarget, z) }),
         el("div", { class: "main" },
           el("div", { class: "title" }, z.bezeichnung || t("default_payment_name"),
-            k ? el("span", { class: "tag" }, k.name) : null,
+            el("button", { class: "tag cat-chip", "aria-haspopup": "menu",
+              "aria-label": t("change_category") + ": " + (k ? k.name : t("no_category")),
+              onclick: (e) => openCatMenu(e.currentTarget, z) },
+              k ? k.name : t("no_category"), el("span", { class: "caret", "aria-hidden": "true" }, "▾")),
             z.aktiv === false ? el("span", { class: "tag muted" }, t("tag_paused")) : null,
             due && dueDays <= 7 ? el("span", { class: "tag warn" }, faelligkeitText(dueDays)) : null,
             deadline && dlDays >= 0 && dlDays <= 60 ? el("span", { class: "tag warn" }, t("cancel_tag", { date: dateFmtFn(deadline) })) : null,
@@ -1247,6 +1256,57 @@
           el("button", { class: "btn danger icon", title: t("delete"), onclick: () => removeZahlung(z.id) }, icon("trash")))
       ));
     }
+  }
+
+  /* ---------- Schnellauswahl: Kategorie einer Ausgabe per Klick wechseln ---------- */
+  let _catMenu = null;
+  function closeCatMenu() {
+    if (!_catMenu) return;
+    document.removeEventListener("mousedown", _catMenu.onDocDown, true);
+    document.removeEventListener("keydown", _catMenu.onKey, true);
+    window.removeEventListener("scroll", _catMenu.onScroll, true);
+    window.removeEventListener("resize", closeCatMenu);
+    _catMenu.el.remove();
+    _catMenu = null;
+  }
+  function openCatMenu(anchorEl, z) {
+    const wasOpen = _catMenu;
+    closeCatMenu();
+    if (wasOpen && wasOpen.z === z) return; // erneuter Klick auf denselben Auslöser: nur schließen
+
+    const menu = el("div", { class: "cat-menu", role: "menu" },
+      ...state.kategorien.map((k) => {
+        const active = k.id === z.kategorieId;
+        return el("button", { class: "cat-item" + (active ? " active" : ""), role: "menuitem", type: "button",
+          onclick: () => { z.kategorieId = k.id; save(); paintZahlungList(); closeCatMenu(); toast(t("saved")); } },
+          el("span", { class: "dot", style: "background:" + k.farbe }),
+          el("span", { class: "cat-item-name" }, k.name),
+          active ? icon("check") : null);
+      }));
+    document.body.appendChild(menu);
+
+    // Position: unter dem Auslöser, an den Viewport-Rand geklemmt, bei wenig Platz nach oben.
+    const r = anchorEl.getBoundingClientRect();
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8));
+    let top = r.bottom + 6;
+    if (top + menu.offsetHeight > window.innerHeight - 8) top = Math.max(8, r.top - menu.offsetHeight - 6);
+    menu.style.left = left + "px";
+    menu.style.top = top + "px";
+
+    const onDocDown = (e) => { if (!menu.contains(e.target) && !anchorEl.contains(e.target)) closeCatMenu(); };
+    const onKey = (e) => { if (e.key === "Escape") { e.preventDefault(); closeCatMenu(); anchorEl.focus(); } };
+    const onScroll = () => closeCatMenu();
+    _catMenu = { el: menu, z, onDocDown, onKey, onScroll };
+    // Erst im nächsten Tick lauschen, damit der öffnende Klick nicht sofort wieder schließt.
+    setTimeout(() => {
+      if (!_catMenu) return;
+      document.addEventListener("mousedown", onDocDown, true);
+      document.addEventListener("keydown", onKey, true);
+      window.addEventListener("scroll", onScroll, true);
+      window.addEventListener("resize", closeCatMenu);
+    }, 0);
+    const focusTarget = menu.querySelector(".cat-item.active") || menu.querySelector(".cat-item");
+    if (focusTarget) focusTarget.focus();
   }
 
   function openZahlungModal(entry) {

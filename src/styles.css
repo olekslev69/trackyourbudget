@@ -210,6 +210,20 @@ body {
 .tag.warn { background: rgba(245, 158, 11, .16); color: var(--warning); }
 .tag.dyn { background: rgba(16, 185, 129, .16); color: var(--success); }
 
+/* Kategorie-Schnellwechsel: klickbarer Farbpunkt + Etikett, Popover-Menü */
+.cat-swatch { appearance: none; -webkit-appearance: none; border: none; padding: 0; cursor: pointer; }
+.cat-swatch:hover { outline: 2px solid var(--primary); outline-offset: 1px; }
+button.cat-chip { border: none; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 5px; }
+button.cat-chip:hover { filter: brightness(.96); }
+.cat-chip .caret { font-size: .82em; opacity: .55; line-height: 1; }
+.cat-menu { position: fixed; z-index: 70; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 6px; min-width: 190px; max-height: 320px; overflow-y: auto; }
+.cat-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: none; background: none; cursor: pointer; font-family: inherit; font-size: .9rem; color: var(--text); padding: 9px 10px; border-radius: 8px; }
+.cat-item:hover, .cat-item:focus { background: var(--surface-2); outline: none; }
+.cat-item.active { font-weight: 700; }
+.cat-item .dot { width: 12px; height: 12px; flex: none; }
+.cat-item-name { flex: 1 1 auto; }
+.cat-item svg { flex: none; color: var(--primary); }
+
 .empty { text-align: center; padding: 46px 20px; color: var(--text-mute); }
 .empty svg { opacity: .5; margin-bottom: 8px; }
 
