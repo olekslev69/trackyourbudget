@@ -2299,7 +2299,7 @@
           el("div", { class: "about-head" },
             el("span", { class: "brand-mark", "aria-hidden": "true" }),
             el("div", {},
-              el("div", { class: "about-name" }, "Sparblick"),
+              el("div", { class: "about-name" }, el("span", { class: "brand-spar" }, "Spar"), "blick"),
               el("div", { class: "hint" }, t("about_tagline")),
               el("div", { class: "about-ver" }, t("about_version") + " " + APP_VERSION))),
           el("div", {},

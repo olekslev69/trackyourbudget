@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Erzeugt die App-Icons (PNG) ohne externe Abhaengigkeiten.
-Motiv: abgerundetes Quadrat mit Verlauf + Donut-Diagramm (Ausgabenaufteilung).
+Motiv "Donut-Iris": abgerundetes Quadrat mit Verlauf + Donut-Diagramm
+(Ausgabenaufteilung), dessen Zentrum Pupille und Glanzlicht traegt --
+aus dem Diagramm wird ein Auge ("Sparblick" = der Blick aufs Budget).
 
 Ausgabe:
 - app-icon.png                     1024x1024  (Quelle fuer `tauri icon`)
@@ -22,6 +24,8 @@ SEGMENTS = [
     (0.20, (251, 191, 36)),    # 20% gelb
     (0.15, (248, 113, 113)),   # 15% rot
 ]
+PUPIL = (30, 27, 75)           # tiefes Indigo (Pupille)
+GLINT = (255, 255, 255)        # Glanzlicht
 
 
 def lerp(a, b, t):
@@ -37,6 +41,11 @@ def make_png(size, maskable=False):
     cx = cy = size / 2
     r_out = size * 0.30
     r_in = size * 0.165
+    # Pupille fuellt das Donut-Loch; Glanzlicht sitzt oben links darin.
+    r_pup = r_in
+    r_gl = size * 0.046
+    gl_x = cx - size * 0.054
+    gl_y = cy - size * 0.058
     # Bei maskable kein abgerundetes Quadrat (randfuellend fuer die Safe-Zone)
     corner = 0 if maskable else size * 0.22
 
@@ -68,6 +77,12 @@ def make_png(size, maskable=False):
             dx = x + 0.5 - cx
             dy = y + 0.5 - cy
             dist = math.hypot(dx, dy)
+            # Pupille (unter dem Ring gezeichnet; der Ring blendet an r_in sauber darueber)
+            if dist <= r_pup + 1:
+                pe = max(0.0, min(1.0, (r_pup + 0.5 - dist)))
+                r = int(lerp(r, PUPIL[0], pe))
+                g = int(lerp(g, PUPIL[1], pe))
+                b = int(lerp(b, PUPIL[2], pe))
             if r_in - 1 <= dist <= r_out + 1:
                 ang = math.atan2(dy, dx)
                 while ang < -math.pi / 2:
@@ -82,6 +97,13 @@ def make_png(size, maskable=False):
                 r = int(lerp(r, seg_col[0], edge))
                 g = int(lerp(g, seg_col[1], edge))
                 b = int(lerp(b, seg_col[2], edge))
+            # Glanzlicht (zuoberst, nur innerhalb der Pupille sichtbar platziert)
+            gdist = math.hypot(x + 0.5 - gl_x, y + 0.5 - gl_y)
+            if gdist <= r_gl + 1:
+                ge = max(0.0, min(1.0, (r_gl + 0.5 - gdist)))
+                r = int(lerp(r, GLINT[0], ge * 0.95))
+                g = int(lerp(g, GLINT[1], ge * 0.95))
+                b = int(lerp(b, GLINT[2], ge * 0.95))
             rows.extend((r, g, b, a))
 
     def chunk(tag, data):
