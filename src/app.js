@@ -6,7 +6,7 @@
   const STORAGE_KEY = "tyb_data_v1";
   const LANG_KEY = "tyb_lang";
   const CURRENCY = "EUR";
-  const APP_VERSION = "0.9.1"; // muss zur Version in package.json / tauri.conf.json passen
+  const APP_VERSION = "0.10.0"; // muss zur Version in package.json / tauri.conf.json passen
   const REPO_URL = "https://github.com/olekslev69/sparblick";
 
   /* ---------- Sprache / i18n ---------- */
@@ -107,9 +107,13 @@
       // Aufteilung (Paare / Familien / WG)
       split_sub: "Gemeinsame Ausgaben fair auf die Personen aufteilen (Werte pro Monat).",
       split_settings_title: "So wird aufgeteilt",
-      split_settings_text: "Wenn aktiv, werden die Ausgaben des gemeinsamen Topfs auf die übrigen erwachsenen Personen verteilt – zu gleichen Teilen (50/50) oder anteilig nach Einkommen. Kinder zahlen nicht mit.",
+      split_settings_text: "Wenn aktiv, werden die Ausgaben des gemeinsamen Topfs auf die übrigen erwachsenen Personen verteilt – zu gleichen Teilen (50/50), anteilig nach Einkommen oder mit frei gewählten Anteilen. Kinder zahlen nicht mit.",
       split_toggle_label: "Gemeinsame Ausgaben aufteilen",
-      split_mode_equal: "50/50 (gleich)", split_mode_income: "Nach Einkommen",
+      split_mode_equal: "50/50 (gleich)", split_mode_income: "Nach Einkommen", split_mode_custom: "Eigene Anteile",
+      split_custom_hint: "Anteile frei festlegen – z. B. 30 / 70. Die Summe muss nicht genau 100 sein, verteilt wird anteilig.",
+      split_custom_sum: "Summe: {sum} % – wird anteilig auf 100 % umgerechnet.",
+      split_summary_custom: "Gemeinsame Ausgaben: {pot} · nach eigenen Anteilen aufgeteilt",
+      per_person_split_note_custom: "Gemeinsame Ausgaben sind nach eigenen Anteilen aufgeteilt.",
       split_shared_person: "Gemeinsamer Topf",
       split_empty_title: "Noch keine Aufteilung möglich",
       split_empty_text: "Füge im Tab Personen eine zweite erwachsene Person hinzu, um gemeinsame Ausgaben aufzuteilen.",
@@ -269,9 +273,13 @@
       // Split (couples / families / shared flats)
       split_sub: "Split shared expenses fairly across people (values per month).",
       split_settings_title: "How splitting works",
-      split_settings_text: "When on, the shared pot's expenses are split across the other adults – equally (50/50) or in proportion to income. Kids don't pay a share.",
+      split_settings_text: "When on, the shared pot's expenses are split across the other adults – equally (50/50), in proportion to income, or with custom shares. Kids don't pay a share.",
       split_toggle_label: "Split shared expenses",
-      split_mode_equal: "50/50 (equal)", split_mode_income: "By income",
+      split_mode_equal: "50/50 (equal)", split_mode_income: "By income", split_mode_custom: "Custom shares",
+      split_custom_hint: "Set the shares yourself – e.g. 30 / 70. The sum doesn't have to be exactly 100; it's applied proportionally.",
+      split_custom_sum: "Total: {sum}% – applied proportionally to 100%.",
+      split_summary_custom: "Shared expenses: {pot} · split by custom shares",
+      per_person_split_note_custom: "Shared expenses are split by custom shares.",
       split_shared_person: "Shared pot",
       split_empty_title: "Nothing to split yet",
       split_empty_text: "Add a second adult under \"People\" to split shared expenses.",
@@ -404,7 +412,7 @@
       sparplaene: [],
       sparziele: [], // Sparziele mit Zielbetrag + angespartem Stand (Einzahlungen)
       // Haushalts-Einstellungen (Teil der Daten, werden mit exportiert/importiert).
-      settings: { splitShared: false, splitMode: "equal", sharedPersonId: "p_gemeinsam", splitPrompted: false },
+      settings: { splitShared: false, splitMode: "equal", splitCustom: {}, sharedPersonId: "p_gemeinsam", splitPrompted: false },
     };
   }
 
@@ -445,8 +453,25 @@
       zahlungen: Array.isArray(d.zahlungen) ? d.zahlungen : [],
       sparplaene: Array.isArray(d.sparplaene) ? d.sparplaene : [],
       sparziele: Array.isArray(d.sparziele) ? d.sparziele : [],
-      settings: { splitShared: !!s.splitShared, splitMode: s.splitMode === "income" ? "income" : "equal", sharedPersonId, splitPrompted: !!s.splitPrompted },
+      settings: {
+        splitShared: !!s.splitShared,
+        splitMode: s.splitMode === "income" || s.splitMode === "custom" ? s.splitMode : "equal",
+        splitCustom: sanitizeCustomShares(s.splitCustom),
+        sharedPersonId, splitPrompted: !!s.splitPrompted,
+      },
     };
+  }
+
+  // Eigene Anteile (Prozentwerte je Person) defensiv übernehmen: nur endliche Zahlen > 0.
+  function sanitizeCustomShares(raw) {
+    const out = {};
+    if (raw && typeof raw === "object") {
+      for (const k in raw) {
+        const v = Number(raw[k]);
+        if (isFinite(v) && v > 0) out[k] = v;
+      }
+    }
+    return out;
   }
 
   function save() {
@@ -646,14 +671,29 @@
     const incomeOf = {};
     individuals.forEach((p) => { incomeOf[p.id] = sumBy(state.einnahmen, p.id); });
     const payerIncome = payers.reduce((s, p) => s + incomeOf[p.id], 0);
+    const mode = state.settings ? state.settings.splitMode : "equal";
     // "Nach Einkommen" nur, wenn es überhaupt Einkommen gibt – sonst zurück auf 50/50.
-    const byIncome = state.settings && state.settings.splitMode === "income" && payerIncome > 0;
+    const byIncome = mode === "income" && payerIncome > 0;
+    // "Eigene Anteile": frei gewählte Gewichte (z. B. 30/70); Summe muss nicht 100 sein,
+    // verteilt wird anteilig. Ohne gültige Gewichte zurück auf 50/50.
+    let weights = null, weightSum = 0;
+    if (shared && mode === "custom") {
+      const custom = state.settings.splitCustom || {};
+      weights = {};
+      payers.forEach((p) => {
+        const w = Number(custom[p.id]);
+        weights[p.id] = isFinite(w) && w > 0 ? w : 0;
+        weightSum += weights[p.id];
+      });
+    }
     return individuals.map((p) => {
       const isKind = p.typ === "kind";
       const income = incomeOf[p.id];
       let pctShare = 0;
       if (shared && !isKind && payers.length) {
-        pctShare = byIncome ? income / payerIncome : 1 / payers.length;
+        pctShare = weights && weightSum > 0 ? weights[p.id] / weightSum
+          : byIncome ? income / payerIncome
+          : 1 / payers.length;
       }
       const expensesOwn = sumBy(activeZ, p.id);
       const expensesShared = pot * pctShare;
@@ -770,7 +810,9 @@
         root.appendChild(el("div", { class: "section-head", style: "margin-top:26px" },
           el("div", {}, el("h2", { style: "font-size:1.05rem" }, t("per_person")),
             el("p", {}, split
-              ? t(state.settings.splitMode === "income" ? "per_person_split_note_income" : "per_person_split_note")
+              ? t(state.settings.splitMode === "income" ? "per_person_split_note_income"
+                : state.settings.splitMode === "custom" ? "per_person_split_note_custom"
+                : "per_person_split_note")
               : t("per_person_sub")))));
         root.appendChild(el("div", { class: "person-cards" }, ...cards));
       }
@@ -1353,19 +1395,51 @@
     });
     sharedSel.addEventListener("change", () => { settings.sharedPersonId = sharedSel.value; save(); render(); });
 
-    // Modus: 50/50 oder anteilig nach Einkommen (nur sichtbar bei aktiver Aufteilung)
+    // Modus: 50/50, anteilig nach Einkommen oder eigene Anteile (nur bei aktiver Aufteilung)
+    const setMode = (m) => { settings.splitMode = m; save(); render(); };
     const modeSeg = settings.splitShared ? el("div", { style: "margin-top:12px" },
       el("div", { class: "seg" },
-        el("button", { class: settings.splitMode !== "income" ? "active" : "",
-          onclick: () => { settings.splitMode = "equal"; save(); render(); } }, t("split_mode_equal")),
+        el("button", { class: settings.splitMode !== "income" && settings.splitMode !== "custom" ? "active" : "",
+          onclick: () => setMode("equal") }, t("split_mode_equal")),
         el("button", { class: settings.splitMode === "income" ? "active" : "",
-          onclick: () => { settings.splitMode = "income"; save(); render(); } }, t("split_mode_income")))) : null;
+          onclick: () => setMode("income") }, t("split_mode_income")),
+        el("button", { class: settings.splitMode === "custom" ? "active" : "",
+          onclick: () => setMode("custom") }, t("split_mode_custom")))) : null;
+
+    // Editor für eigene Anteile (z. B. 30/70): eine Prozent-Eingabe je erwachsener Person.
+    let customEditor = null;
+    if (settings.splitShared && settings.splitMode === "custom") {
+      const payersP = state.personen.filter((p) => p.id !== settings.sharedPersonId && p.typ !== "kind");
+      settings.splitCustom = settings.splitCustom || {};
+      // Beim ersten Öffnen gleichmäßig vorbelegen, damit sichtbar ist, wie es funktioniert.
+      if (payersP.length && !payersP.some((p) => Number(settings.splitCustom[p.id]) > 0)) {
+        const even = Math.floor(100 / payersP.length);
+        payersP.forEach((p, i) => {
+          settings.splitCustom[p.id] = i === payersP.length - 1 ? 100 - even * (payersP.length - 1) : even;
+        });
+        save();
+      }
+      const sum = payersP.reduce((s2, p) => s2 + (Number(settings.splitCustom[p.id]) || 0), 0);
+      customEditor = el("div", { style: "margin-top:12px" },
+        el("p", { class: "hint", style: "margin:0 0 8px" }, t("split_custom_hint")),
+        ...payersP.map((p) => {
+          const inp = el("input", { type: "number", min: "0", max: "1000", step: "1",
+            value: Number(settings.splitCustom[p.id]) > 0 ? settings.splitCustom[p.id] : 0 });
+          inp.addEventListener("change", () => {
+            settings.splitCustom[p.id] = Math.max(0, Number(inp.value) || 0);
+            save(); render();
+          });
+          return el("div", { class: "custom-share-row" }, el("span", {}, p.name), inp, el("span", { class: "hint" }, "%"));
+        }),
+        sum > 0 && sum !== 100 ? el("p", { class: "hint", style: "margin:8px 0 0" }, t("split_custom_sum", { sum })) : null);
+    }
 
     root.appendChild(el("div", { class: "card" },
       el("h3", { style: "margin:0 0 6px" }, t("split_settings_title")),
       el("p", { class: "hint", style: "margin:0 0 12px" }, t("split_settings_text")),
       el("label", { class: "split-toggle" }, toggle, el("span", {}, t("split_toggle_label"))),
       modeSeg,
+      customEditor,
       el("div", { class: "field", style: "margin-top:12px;max-width:280px" },
         el("label", {}, t("split_shared_person")), sharedSel)
     ));
@@ -1384,6 +1458,8 @@
       const pot = state.zahlungen.filter((z) => z.aktiv !== false && z.person === sharedId).reduce((s, z) => s + monthly(z), 0);
       const line = settings.splitMode === "income"
         ? t("split_summary_income", { pot: fmt(pot), n: payers.length })
+        : settings.splitMode === "custom"
+        ? t("split_summary_custom", { pot: fmt(pot) })
         : t("split_summary", { pot: fmt(pot), n: payers.length, each: fmt(payers.length ? pot / payers.length : 0) });
       root.appendChild(el("p", { class: "filter-summary", style: "margin:16px 2px 4px" }, line));
       if (shares.some((ps) => ps.isKind)) {
