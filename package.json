@@ -1,6 +1,6 @@
 {
   "name": "sparblick",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Lokaler Vertrags- und Budget-Tracker als Desktop-App",
   "private": true,
   "scripts": {

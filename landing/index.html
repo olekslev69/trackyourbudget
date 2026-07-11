@@ -96,6 +96,15 @@
     .feature .ico { font-size: 1.7rem; line-height: 1; margin-bottom: 12px; }
     .feature h3 { margin: 0 0 7px; font-size: 1.12rem; }
     .feature p { margin: 0; color: var(--text-soft); font-size: .95rem; }
+    .themes-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+    .tsw { width: 150px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+    .tsw .bar { height: 30px; display: flex; align-items: center; padding: 0 12px; }
+    .tsw .bar b { width: 34px; height: 8px; border-radius: 5px; background: rgba(255,255,255,.92); }
+    .tsw .body { padding: 12px; display: flex; flex-direction: column; gap: 7px; min-height: 78px; }
+    .tsw .ln { height: 9px; border-radius: 5px; }
+    .tsw .dots { display: flex; gap: 5px; margin-top: 3px; }
+    .tsw .dots i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+    .tsw .name { padding: 9px 8px; font-weight: 700; font-size: .82rem; letter-spacing: -.01em; text-align: center; border-top: 1px solid var(--border); }
     .split { display: grid; gap: 40px; align-items: center; grid-template-columns: 1fr; }
     @media (min-width: 860px) { .split { grid-template-columns: 1fr 1fr; } .split.rev .txt { order: 2; } }
     .split h2 { font-size: clamp(1.5rem, 3.5vw, 2rem); letter-spacing: -.02em; margin: 0 0 14px; }
@@ -193,6 +202,72 @@
           <div class="feature"><div class="ico">👨‍👩‍👧</div><h3>Personen &amp; Kinder</h3><p>Budget pro Person betrachten, Kinder markieren (Taschengeld, eigene Sparziele) – die Grundlage für getrennte Budgets.</p></div>
           <div class="feature"><div class="ico">📄</div><h3>Export &amp; Drucken</h3><p>Vollständiges <b>JSON-Backup</b>, <b>CSV</b> für Excel/Numbers/Sheets und eine Ein-Seiten-<b>PDF-Zusammenfassung</b> fürs Familiengespräch.</p></div>
           <div class="feature"><div class="ico">📱</div><h3>Überall &amp; offline</h3><p>Als Progressive Web App aufs Handy, als Desktop-App für macOS, Windows und Linux – funktioniert auch offline.</p></div>
+          <div class="feature"><div class="ico">🎨</div><h3>Farbschemata</h3><p>Mehrere Designs frei wählbar – Hell, Dunkel, Ozean, Sonnenuntergang und das kunterbunte Bonbon, oder einfach der System-Einstellung folgen.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="themes">
+      <div class="wrap">
+        <div class="sec-head">
+          <h2>Ein Farbschema, das zu dir passt</h2>
+          <p>Wähle dein Design frei oben im Kopfbereich – von dezent bis kunterbunt. Die Wahl wird pro Gerät gemerkt; „System“ folgt automatisch der Hell-/Dunkel-Einstellung deines Geräts.</p>
+        </div>
+        <div class="themes-row">
+          <div class="tsw">
+            <div class="bar" style="background:linear-gradient(90deg,#6366f1,#818cf8)"><b></b></div>
+            <div class="body" style="background:linear-gradient(120deg,#f4f5fb 0 50%,#10121c 50% 100%)">
+              <span class="ln" style="background:rgba(127,127,140,.45)"></span>
+              <span class="ln" style="background:rgba(127,127,140,.32);width:55%"></span>
+              <div class="dots"><i style="background:#10b981"></i><i style="background:#f59e0b"></i><i style="background:#818cf8"></i></div>
+            </div>
+            <div class="name">System</div>
+          </div>
+          <div class="tsw">
+            <div class="bar" style="background:#6366f1"><b></b></div>
+            <div class="body" style="background:#f4f5fb">
+              <span class="ln" style="background:#e6e8f0"></span>
+              <span class="ln" style="background:#6366f1;width:55%"></span>
+              <div class="dots"><i style="background:#10b981"></i><i style="background:#f59e0b"></i><i style="background:#ef4444"></i></div>
+            </div>
+            <div class="name">Hell</div>
+          </div>
+          <div class="tsw">
+            <div class="bar" style="background:#818cf8"><b></b></div>
+            <div class="body" style="background:#10121c">
+              <span class="ln" style="background:#2b3048"></span>
+              <span class="ln" style="background:#818cf8;width:55%"></span>
+              <div class="dots"><i style="background:#10b981"></i><i style="background:#f59e0b"></i><i style="background:#ef4444"></i></div>
+            </div>
+            <div class="name">Dunkel</div>
+          </div>
+          <div class="tsw">
+            <div class="bar" style="background:#0891b2"><b></b></div>
+            <div class="body" style="background:#eaf4f7">
+              <span class="ln" style="background:#cbe3ea"></span>
+              <span class="ln" style="background:#0891b2;width:55%"></span>
+              <div class="dots"><i style="background:#059669"></i><i style="background:#d97706"></i><i style="background:#e11d48"></i></div>
+            </div>
+            <div class="name">Ozean</div>
+          </div>
+          <div class="tsw">
+            <div class="bar" style="background:#f43f5e"><b></b></div>
+            <div class="body" style="background:#221824">
+              <span class="ln" style="background:#4b3242"></span>
+              <span class="ln" style="background:#f43f5e;width:55%"></span>
+              <div class="dots"><i style="background:#34d399"></i><i style="background:#fbbf24"></i><i style="background:#f87171"></i></div>
+            </div>
+            <div class="name">Sonnenuntergang</div>
+          </div>
+          <div class="tsw">
+            <div class="bar" style="background:#d81b9e"><b></b></div>
+            <div class="body" style="background:#fdeaf7">
+              <span class="ln" style="background:#f3cdec"></span>
+              <span class="ln" style="background:#d81b9e;width:55%"></span>
+              <div class="dots"><i style="background:#06b64e"></i><i style="background:#ff8a00"></i><i style="background:#ff2e63"></i></div>
+            </div>
+            <div class="name">Bonbon</div>
+          </div>
         </div>
       </div>
     </section>

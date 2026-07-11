@@ -208,6 +208,7 @@ body {
 .tag { font-size: .72rem; padding: 2px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-weight: 600; }
 .tag.muted { background: var(--surface-2); color: var(--text-mute); }
 .tag.warn { background: rgba(245, 158, 11, .16); color: var(--warning); }
+.tag.dyn { background: rgba(16, 185, 129, .16); color: var(--success); }
 
 .empty { text-align: center; padding: 46px 20px; color: var(--text-mute); }
 .empty svg { opacity: .5; margin-bottom: 8px; }

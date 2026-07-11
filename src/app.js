@@ -7,7 +7,7 @@
   const LANG_KEY = "tyb_lang";
   const THEME_KEY = "tyb_theme";
   const CURRENCY = "EUR";
-  const APP_VERSION = "0.11.0"; // muss zur Version in package.json / tauri.conf.json + src/version.json passen
+  const APP_VERSION = "0.12.0"; // muss zur Version in package.json / tauri.conf.json + src/version.json passen
   const REPO_URL = "https://github.com/olekslev69/sparblick";
   const RELEASES_URL = REPO_URL + "/releases";
   // „Neueste Version" wird von GitHub Pages gelesen (auch aus der Desktop-App heraus).
@@ -87,6 +87,11 @@
       new_savings: "Neue Sparrate", edit_savings: "Sparrate bearbeiten", savings_added: "Sparrate hinzugefügt",
       delete_savings_confirm: "Diese Sparrate löschen?", default_savings_name: "Sparrate",
       ph_savings: "z. B. MSCI World ETF", ph_note_depot: "z. B. Depot bei …",
+      // Dynamik (jährliche Erhöhung der Sparrate)
+      label_dynamik: "Jährliche Erhöhung % (optional)",
+      dynamik_tag: "+{d} %/Jahr",
+      dynamik_proj: "In {n} Jahren {rate}/Monat",
+      dynamik_paid: "eingezahlt in {n} J. ~ {total}",
       // Sparziele
       plans_title: "Sparpläne", goals_title: "Sparziele",
       add_goal: "+ Sparziel", new_goal: "Neues Sparziel", edit_goal: "Sparziel bearbeiten",
@@ -266,6 +271,11 @@
       new_savings: "New savings plan", edit_savings: "Edit savings plan", savings_added: "Savings plan added",
       delete_savings_confirm: "Delete this savings plan?", default_savings_name: "Savings",
       ph_savings: "e.g. MSCI World ETF", ph_note_depot: "e.g. broker …",
+      // Dynamic yearly step-up of the savings rate
+      label_dynamik: "Annual increase % (optional)",
+      dynamik_tag: "+{d}%/yr",
+      dynamik_proj: "In {n} years {rate}/mo",
+      dynamik_paid: "paid in {n}y ~ {total}",
       // Savings goals
       plans_title: "Savings plans", goals_title: "Savings goals",
       add_goal: "+ Goal", new_goal: "New savings goal", edit_goal: "Edit savings goal",
@@ -668,6 +678,9 @@
   function fmtPct(n) {
     return (n * 100).toFixed(n < 0.1 ? 1 : 0) + (lang === "de" ? " %" : "%");
   }
+  function fmtNum(n) {
+    return new Intl.NumberFormat(locale(), { maximumFractionDigits: 1 }).format(Number(n) || 0);
+  }
   function dateFmtFn(d) {
     const l = locale();
     if (!_df[l]) _df[l] = new Intl.DateTimeFormat(l, { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -677,6 +690,21 @@
   function monthly(entry) {
     const iv = INTERVALS[entry.intervall] || INTERVALS.monatlich;
     return (Number(entry.betrag) || 0) * iv.perMonth;
+  }
+
+  // Sparraten-Dynamik: Prozent pro Jahr, defensiv auf 0..100 begrenzt.
+  function clampDynamik(v) { return Math.max(0, Math.min(100, Number(v) || 0)); }
+  // Rein informative Projektion (keine Rendite): Monatsrate und Summe der Einzahlungen
+  // nach n Jahren, wenn die Rate jedes Jahr um `dynamik` % steigt.
+  const DYN_HORIZON = 10;
+  function dynamikProjection(sp) {
+    const d = clampDynamik(sp.dynamik) / 100;
+    if (d <= 0) return null;
+    const r0 = monthly(sp);
+    const factor = Math.pow(1 + d, DYN_HORIZON);
+    const rate = r0 * factor;
+    const total = 12 * r0 * (factor - 1) / d; // geometrische Summe der Jahresraten
+    return { years: DYN_HORIZON, rate, total };
   }
 
   /* ---------- Datum / Fälligkeiten ---------- */
@@ -1291,22 +1319,28 @@
       root.appendChild(el("p", { class: "filter-summary" },
         t("count_savings", { n: plaene.length }) + " · " + t("sum_line", { m: fmt(total), y: fmt(total * 12) })));
       root.appendChild(el("div", { class: "list" }, ...plaene
-        .slice().sort((a, b) => monthly(b) - monthly(a)).map((sp) =>
-          el("div", { class: "item" + (sp.aktiv === false ? " inactive" : "") },
+        .slice().sort((a, b) => monthly(b) - monthly(a)).map((sp) => {
+          const dyn = clampDynamik(sp.dynamik);
+          const proj = dynamikProjection(sp);
+          return el("div", { class: "item" + (sp.aktiv === false ? " inactive" : "") },
             el("span", { class: "swatch", style: "background:var(--success)" }),
             el("div", { class: "main" },
               el("div", { class: "title" }, sp.bezeichnung || t("default_savings_name"),
                 el("span", { class: "tag" }, sparArtLabel(sp.art)),
+                dyn > 0 ? el("span", { class: "tag dyn" }, t("dynamik_tag", { d: fmtNum(dyn) })) : null,
                 sp.aktiv === false ? el("span", { class: "tag muted" }, t("tag_paused")) : null,
                 el("span", { class: "tag muted" }, personName(sp.person))),
-              el("div", { class: "meta" }, intervalLabel(sp.intervall) + (sp.notiz ? " · " + sp.notiz : ""))),
+              el("div", { class: "meta" }, intervalLabel(sp.intervall) + (sp.notiz ? " · " + sp.notiz : "")),
+              proj ? el("div", { class: "meta" },
+                t("dynamik_proj", { n: proj.years, rate: fmt(proj.rate) }) + " · " + t("dynamik_paid", { n: proj.years, total: fmt(proj.total) })) : null),
             el("div", { class: "value" }, fmt(monthly(sp)),
               el("small", {}, sp.intervall !== "monatlich" ? fmt(sp.betrag) + " " + intervalLabel(sp.intervall) : t("per_month_slash"))),
             el("div", { class: "actions" },
               el("button", { class: "btn ghost icon", title: sp.aktiv === false ? t("activate") : t("pause"), onclick: () => toggleSpar(sp.id) }, icon(sp.aktiv === false ? "play" : "pause")),
               el("button", { class: "btn ghost icon", title: t("edit"), onclick: () => openSparModal(sp) }, icon("edit")),
               el("button", { class: "btn danger icon", title: t("delete"), onclick: () => removeSpar(sp.id) }, icon("trash")))
-          ))));
+          );
+        })));
     }
   }
 
@@ -1377,7 +1411,7 @@
   function openSparModal(entry) {
     const isNew = !entry;
     const sp = entry || { id: uid("s"), bezeichnung: "", betrag: "", intervall: "monatlich",
-      art: "etf", person: state.personen[0].id, notiz: "", aktiv: true };
+      art: "etf", person: state.personen[0].id, notiz: "", dynamik: "", aktiv: true };
     openModal(isNew ? t("new_savings") : t("edit_savings"), [
       textField("bezeichnung", t("label_name"), sp.bezeichnung, t("ph_savings")),
       el("div", { class: "field-row" },
@@ -1386,11 +1420,13 @@
       el("div", { class: "field-row" },
         selectField("art", t("label_type"), sparArtOptions(), sp.art),
         selectField("person", t("label_person"), personOptions(), sp.person)),
+      numField("dynamik", t("label_dynamik"), sp.dynamik),
       textField("notiz", t("label_note"), sp.notiz, t("ph_note_depot")),
     ], (vals) => {
       if (!vals.betrag) { toast(t("amount_required")); return false; }
       const rec = { id: sp.id, bezeichnung: vals.bezeichnung.trim() || t("default_savings_name"), betrag: Number(vals.betrag),
-        intervall: vals.intervall, art: vals.art, person: vals.person, notiz: vals.notiz.trim(), aktiv: sp.aktiv !== false };
+        intervall: vals.intervall, art: vals.art, person: vals.person, notiz: vals.notiz.trim(),
+        dynamik: clampDynamik(vals.dynamik), aktiv: sp.aktiv !== false };
       const i = state.sparplaene.findIndex((x) => x.id === sp.id);
       if (i >= 0) state.sparplaene[i] = rec; else state.sparplaene.push(rec);
       save(); render(); toast(isNew ? t("savings_added") : t("saved"));
