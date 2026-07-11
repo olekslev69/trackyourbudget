@@ -32,6 +32,56 @@
   }
 }
 
+/* ---------- Farbschemata (frei im Kopfbereich wählbar) ----------
+   „System" = kein data-theme-Attribut -> :root + prefers-color-scheme oben.
+   Die festen Schemata überschreiben die System-Vorgabe (höhere Spezifität). */
+:root[data-theme="light"] {
+  --bg: #f4f5fb; --surface: #ffffff; --surface-2: #f8f9ff; --border: #e6e8f0;
+  --text: #1e2233; --text-soft: #5b6178; --text-mute: #8a90a6;
+  --primary: #6366f1; --primary-soft: #eef0ff;
+  --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+  --shadow: 0 1px 2px rgba(30, 34, 51, .06), 0 8px 24px rgba(30, 34, 51, .06);
+}
+:root[data-theme="dark"] {
+  --bg: #10121c; --surface: #191c2b; --surface-2: #1f2333; --border: #2b3048;
+  --text: #eceefb; --text-soft: #a9afc8; --text-mute: #767d9a;
+  --primary: #818cf8; --primary-soft: #262a45;
+  --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 30px rgba(0, 0, 0, .35);
+}
+/* Ozean: kühles Türkis/Cyan */
+:root[data-theme="ocean"] {
+  --bg: #eaf4f7; --surface: #ffffff; --surface-2: #e2eff3; --border: #cbe3ea;
+  --text: #0d2a33; --text-soft: #3d5a63; --text-mute: #6d8992;
+  --primary: #0891b2; --primary-soft: #d3eff6;
+  --success: #059669; --danger: #e11d48; --warning: #d97706;
+  --shadow: 0 1px 2px rgba(8, 42, 51, .06), 0 8px 24px rgba(8, 42, 51, .09);
+}
+/* Sonnenuntergang: warmes, dunkles Rosé/Koralle */
+:root[data-theme="sunset"] {
+  --bg: #221824; --surface: #2e1f2e; --surface-2: #3a2733; --border: #4b3242;
+  --text: #ffece2; --text-soft: #e6b7a9; --text-mute: #b98a86;
+  --primary: #f43f5e; --primary-soft: #48232f;
+  --success: #34d399; --danger: #f87171; --warning: #fbbf24;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 14px 34px rgba(40, 10, 25, .5);
+}
+/* Bonbon: kunterbunt, verspielt */
+:root[data-theme="candy"] {
+  --bg: #fdeaf7; --surface: #ffffff; --surface-2: #fbe6fb; --border: #f3cdec;
+  --text: #2a123a; --text-soft: #6b3f79; --text-mute: #9a6fa6;
+  --primary: #d81b9e; --primary-soft: #ffe0f6;
+  --success: #06b64e; --danger: #ff2e63; --warning: #ff8a00;
+  --shadow: 0 1px 2px rgba(120, 20, 90, .08), 0 12px 30px rgba(180, 30, 140, .16);
+}
+:root[data-theme="candy"] body {
+  background:
+    radial-gradient(1200px 600px at 12% -8%, #ffd9f0 0, rgba(255, 217, 240, 0) 60%),
+    radial-gradient(1000px 560px at 108% 8%, #d9e4ff 0, rgba(217, 228, 255, 0) 55%),
+    radial-gradient(1000px 700px at 60% 108%, #d6fbef 0, rgba(214, 251, 239, 0) 55%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -68,6 +118,7 @@ body {
 .header-controls { display: flex; align-items: center; gap: 14px; }
 .lang-seg button { padding: 5px 11px; font-size: .8rem; }
 .view-filter { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--text-soft); }
+.theme-filter select { width: auto; min-width: 128px; }
 
 /* ---------- Tabs ---------- */
 .tabs {

@@ -70,6 +70,9 @@ ist und sichtbar „🎉 Ziel erreicht" markiert wird (frei erfundene Beispielda
   füllt sich, und sobald das Ziel erreicht ist, wird es **deutlich markiert** („🎉 Ziel erreicht",
   grüner Balken).
 - **Kategorien:** frei anpassbar mit eigener Farbe.
+- **Farbschema:** oben rechts lässt sich das Design frei wählen – **System**
+  (folgt der Hell-/Dunkel-Einstellung des Geräts), **Hell**, **Dunkel**, **Ozean**,
+  **Sonnenuntergang** und das kunterbunte **Bonbon**. Die Auswahl wird pro Gerät gemerkt.
 - **Personen / spätere getrennte Budgets:** Im Tab **Personen** lassen sich Personen
   anlegen, umbenennen und löschen (z. B. „Partnerin" durch den echten Namen ersetzen).
   Jede Einnahme und Zahlung kann einer Person zugeordnet werden. Über die **Ansicht**

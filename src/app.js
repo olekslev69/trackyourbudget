@@ -5,8 +5,9 @@
 
   const STORAGE_KEY = "tyb_data_v1";
   const LANG_KEY = "tyb_lang";
+  const THEME_KEY = "tyb_theme";
   const CURRENCY = "EUR";
-  const APP_VERSION = "0.10.0"; // muss zur Version in package.json / tauri.conf.json passen
+  const APP_VERSION = "0.11.0"; // muss zur Version in package.json / tauri.conf.json passen
   const REPO_URL = "https://github.com/olekslev69/sparblick";
 
   /* ---------- Sprache / i18n ---------- */
@@ -17,6 +18,9 @@
       tab_uebersicht: "Übersicht", tab_einnahmen: "Einnahmen", tab_zahlungen: "Ausgaben",
       tab_sparen: "Sparen", tab_kategorien: "Kategorien", tab_personen: "Personen",
       tab_aufteilung: "Aufteilung", tab_daten: "Daten",
+      // Farbschema-Auswahl
+      theme_label: "Farbschema", theme_auto: "System", theme_light: "Hell", theme_dark: "Dunkel",
+      theme_ocean: "Ozean", theme_sunset: "Sonnenuntergang", theme_candy: "Bonbon",
       // Aktionen / generisch
       cancel: "Abbrechen", save_btn: "Speichern", edit: "Bearbeiten", delete: "Löschen",
       pause: "Pausieren", activate: "Aktivieren", saved: "Gespeichert", deleted: "Gelöscht",
@@ -195,6 +199,9 @@
       tab_uebersicht: "Overview", tab_einnahmen: "Income", tab_zahlungen: "Expenses",
       tab_sparen: "Savings", tab_kategorien: "Categories", tab_personen: "People",
       tab_aufteilung: "Split", tab_daten: "Data",
+      // Color theme picker
+      theme_label: "Color theme", theme_auto: "System", theme_light: "Light", theme_dark: "Dark",
+      theme_ocean: "Ocean", theme_sunset: "Sunset", theme_candy: "Candy",
       cancel: "Cancel", save_btn: "Save", edit: "Edit", delete: "Delete",
       pause: "Pause", activate: "Activate", saved: "Saved", deleted: "Deleted",
       name_required: "Please enter a name", amount_required: "Please enter an amount",
@@ -366,6 +373,35 @@
     let s = (I18N[lang] && I18N[lang][key]) || I18N.de[key] || key;
     if (vars) for (const k in vars) s = s.replace("{" + k + "}", vars[k]);
     return s;
+  }
+
+  /* ---------- Farbschema (Geräte-Einstellung, nicht Teil der Daten) ---------- */
+  const THEMES = ["auto", "light", "dark", "ocean", "sunset", "candy"];
+  let theme = pickTheme();
+  function pickTheme() {
+    try {
+      const stored = localStorage.getItem(THEME_KEY);
+      if (THEMES.indexOf(stored) >= 0) return stored;
+    } catch (e) { /* ignore */ }
+    return "auto";
+  }
+  function applyTheme() {
+    const root = document.documentElement;
+    if (theme === "auto") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", theme);
+    // Browser-/PWA-Leiste an das aktive Schema anpassen.
+    try {
+      const c = getComputedStyle(root).getPropertyValue("--primary").trim();
+      const m = document.querySelector('meta[name="theme-color"]');
+      if (m && c) m.setAttribute("content", c);
+    } catch (e) { /* ignore */ }
+  }
+  function setTheme(v) {
+    if (THEMES.indexOf(v) < 0 || v === theme) return;
+    theme = v;
+    try { localStorage.setItem(THEME_KEY, v); } catch (e) { /* ignore */ }
+    applyTheme();
+    updateThemePicker();
   }
 
   /* ---------- Intervalle: Umrechnung auf Monatsbetrag ---------- */
@@ -712,10 +748,17 @@
       aufteilung: "tab_aufteilung", daten: "tab_daten",
     };
     document.querySelectorAll(".tab").forEach((tab) => { tab.textContent = t(tabKeys[tab.dataset.view] || tab.dataset.view); });
-    const vl = document.querySelector(".view-filter > span");
+    const vl = document.querySelector(".view-filter > span:first-child");
     if (vl) vl.textContent = t("view");
     const pf = $("#personFilter");
     if (pf) pf.setAttribute("aria-label", t("filter_by_person"));
+    const tl = document.querySelector(".theme-label");
+    if (tl) tl.textContent = t("theme_label");
+    const tp = $("#themePicker");
+    if (tp) {
+      tp.setAttribute("aria-label", t("theme_label"));
+      Array.from(tp.options).forEach((o) => { o.textContent = t("theme_" + o.value); });
+    }
   }
 
   function renderPersonFilter() {
@@ -2323,9 +2366,22 @@
       el("button", { "data-lang": "de", onclick: () => setLang("de") }, "DE"),
       el("button", { "data-lang": "en", onclick: () => setLang("en") }, "EN"));
     hc.insertBefore(seg, hc.firstChild);
+    buildThemePicker(hc);
     const about = el("button", { class: "icon-btn about-btn", title: t("about"), "aria-label": t("about"), onclick: openAbout }, icon("info"));
     hc.appendChild(about);
     updateLangToggle();
+  }
+  function buildThemePicker(hc) {
+    const sel = el("select", { id: "themePicker", "aria-label": t("theme_label"),
+      onchange: (e) => setTheme(e.target.value) },
+      ...THEMES.map((v) => el("option", { value: v }, t("theme_" + v))));
+    sel.value = theme;
+    hc.appendChild(el("label", { class: "view-filter theme-filter" },
+      el("span", { class: "theme-label" }, t("theme_label")), sel));
+  }
+  function updateThemePicker() {
+    const tp = $("#themePicker");
+    if (tp) tp.value = theme;
   }
   function updateLangToggle() {
     document.querySelectorAll(".lang-seg button").forEach((b) => b.classList.toggle("active", b.dataset.lang === lang));
@@ -2346,6 +2402,7 @@
   );
   $("#personFilter").addEventListener("change", (e) => { personFilter = e.target.value; render(); });
 
+  applyTheme();
   buildLangToggle();
   render();
 
