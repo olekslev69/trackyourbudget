@@ -6,7 +6,7 @@
   const STORAGE_KEY = "tyb_data_v1";
   const LANG_KEY = "tyb_lang";
   const CURRENCY = "EUR";
-  const APP_VERSION = "0.9.0"; // muss zur Version in package.json / tauri.conf.json passen
+  const APP_VERSION = "0.9.1"; // muss zur Version in package.json / tauri.conf.json passen
   const REPO_URL = "https://github.com/olekslev69/sparblick";
 
   /* ---------- Sprache / i18n ---------- */
