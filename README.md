@@ -79,8 +79,9 @@ ist und sichtbar „🎉 Ziel erreicht" markiert wird (frei erfundene Beispielda
   Personen können als **Kind** markiert werden – ideal für **Taschengeld** (als Einnahme
   des Kindes) und eigene Sparziele; Kinder zahlen bei der Aufteilung nicht mit.
 - **Aufteilung (Paare, Familien, WGs):** Im Tab **Aufteilung** lassen sich gemeinsame Ausgaben
-  optional auf die Personen aufteilen – wahlweise **50/50** oder **anteilig nach Einkommen**
-  (wer 75 % des Einkommens hat, trägt 75 % der gemeinsamen Kosten). Ist die Aufteilung aktiv,
+  optional auf die Personen aufteilen – wahlweise **50/50**, **anteilig nach Einkommen**
+  (wer 75 % des Einkommens hat, trägt 75 % der gemeinsamen Kosten) oder mit **frei
+  wählbaren Anteilen** (z. B. 30/70, pro Person einstellbar). Ist die Aufteilung aktiv,
   werden die Ausgaben des gemeinsamen Topfs (frei wählbar, Standard „Gemeinsam") auf die übrigen
   erwachsenen Personen verteilt; jede Person sieht ihren **fairen Anteil** an den Haushaltskosten
   (eigene Ausgaben + Anteil gemeinsam) sowie ihr frei Verfügbares. **Standardmäßig aus** – so
