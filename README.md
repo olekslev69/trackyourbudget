@@ -130,12 +130,17 @@ Sparblick ist eine **Progressive Web App**: Am Handy im Browser öffnen und übe
 Menü **„Zum Startbildschirm hinzufügen"** installieren – danach startet sie im Vollbild
 wie eine echte App und funktioniert **offline**.
 
-Dafür braucht das Handy eine **HTTPS-Adresse**. Dieses Repo veröffentlicht das Frontend
-automatisch über **GitHub Pages** unter:
+Dafür braucht das Handy eine **HTTPS-Adresse**. Dieses Repo veröffentlicht über
+**GitHub Pages** eine **Website** (Startseite mit Erklärung) und die **App** selbst:
 
 ```
-https://olekslev69.github.io/sparblick/
+Website:  https://olekslev69.github.io/sparblick/
+App:      https://olekslev69.github.io/sparblick/app/
 ```
+
+Zum Installieren die **App**-Adresse (`…/sparblick/app/`) im Handy-Browser öffnen und
+**„Zum Startbildschirm hinzufügen"** wählen. Auf der Website führt der Button
+**„App öffnen"** an dieselbe Stelle.
 
 Einmalige Einrichtung: in GitHub unter **Settings → Pages → Source: „GitHub Actions"**
 aktivieren; danach deployt der Workflow `.github/workflows/pages.yml` bei jedem Push auf
