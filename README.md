@@ -168,6 +168,25 @@ und zu eine datierte Sicherungskopie an (z. B. `sparblick-2026-07.json`).
 > automatischen Mehrgeräte-Sync (inkl. Änderungen/Löschungen) wäre eine spätere
 > Ausbaustufe nötig.
 
+## Installation auf dem Mac („Sparblick ist beschädigt …")
+
+Die Release-Downloads sind **nicht mit einem Apple-Entwicklerzertifikat signiert**
+(das kostet 99 €/Jahr). macOS zeigt bei aus dem Internet geladenen, unsignierten
+Apps deshalb die irreführende Meldung **„Sparblick ist beschädigt und kann nicht
+geöffnet werden"** – die App ist dabei völlig in Ordnung.
+
+So installierst du sie trotzdem (einmalig nötig):
+
+1. Die passende DMG laden – **Apple Silicon (M1–M4): `…_aarch64.dmg`**,
+   Intel-Macs: `…_x64.dmg` – und Sparblick in den Ordner **Programme** ziehen.
+2. Im Terminal die Quarantäne-Markierung entfernen:
+
+   ```bash
+   xattr -cr /Applications/Sparblick.app
+   ```
+
+3. Sparblick normal öffnen.
+
 ## Als Desktop-App bauen (Tauri)
 
 Die App ist ein [Tauri](https://tauri.app)-Projekt (Rust + Webview). Der
