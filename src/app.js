@@ -7,7 +7,7 @@
   const LANG_KEY = "tyb_lang";
   const THEME_KEY = "tyb_theme";
   const CURRENCY = "EUR";
-  const APP_VERSION = "0.13.0"; // muss zur Version in package.json / tauri.conf.json + src/version.json passen
+  const APP_VERSION = "0.14.0"; // muss zur Version in package.json / tauri.conf.json + src/version.json passen
   const REPO_URL = "https://github.com/olekslev69/sparblick";
   const RELEASES_URL = REPO_URL + "/releases";
   // „Neueste Version" wird von GitHub Pages gelesen (auch aus der Desktop-App heraus).
@@ -53,6 +53,8 @@
       no_payments_yet_text: "Lege unter Ausgaben deine Verträge und Abos an, um die Aufteilung zu sehen.",
       upcoming_due: "Demnächst fällig", per_person: "Pro Person",
       per_person_sub: "Grundlage für spätere getrennte Budgets",
+      trend_title: "Verlauf", trend_sub: "Entwicklung deiner Monatswerte",
+      trend_hint_build: "Der Verlauf baut sich Monat für Monat auf – schau in ein paar Wochen wieder rein.",
       pp_costs: "Ausgaben", free_short: "Frei", no_category: "Ohne Kategorie",
       change_category: "Kategorie ändern",
       // Fälligkeit
@@ -243,6 +245,8 @@
       no_payments_yet_text: "Add your contracts and subscriptions under Expenses to see the breakdown.",
       upcoming_due: "Upcoming", per_person: "Per person",
       per_person_sub: "Basis for separate budgets later",
+      trend_title: "Trend", trend_sub: "How your monthly figures develop",
+      trend_hint_build: "The trend builds up month by month – check back in a few weeks.",
       pp_costs: "Expenses", free_short: "Available", no_category: "No category",
       change_category: "Change category",
       due_today: "due today", due_tomorrow: "due tomorrow", due_in_days: "in {n} days",
@@ -555,6 +559,7 @@
       zahlungen: [],
       sparplaene: [],
       sparziele: [], // Sparziele mit Zielbetrag + angespartem Stand (Einzahlungen)
+      verlauf: [], // monatliche Schnappschüsse: { ym, income, expenses, savings }
       // Haushalts-Einstellungen (Teil der Daten, werden mit exportiert/importiert).
       settings: { splitShared: false, splitMode: "equal", splitCustom: {}, sharedPersonId: "p_gemeinsam", splitPrompted: false },
     };
@@ -597,6 +602,7 @@
       zahlungen: Array.isArray(d.zahlungen) ? d.zahlungen : [],
       sparplaene: Array.isArray(d.sparplaene) ? d.sparplaene : [],
       sparziele: Array.isArray(d.sparziele) ? d.sparziele : [],
+      verlauf: sanitizeVerlauf(d.verlauf),
       settings: {
         splitShared: !!s.splitShared,
         splitMode: s.splitMode === "income" || s.splitMode === "custom" ? s.splitMode : "equal",
@@ -604,6 +610,16 @@
         sharedPersonId, splitPrompted: !!s.splitPrompted,
       },
     };
+  }
+
+  // Verlaufs-Schnappschüsse defensiv übernehmen (nur gültige Monats-Einträge, letzte 24).
+  function sanitizeVerlauf(raw) {
+    if (!Array.isArray(raw)) return [];
+    const clean = raw
+      .filter((v) => v && typeof v.ym === "string" && /^\d{4}-\d{2}$/.test(v.ym))
+      .map((v) => ({ ym: v.ym, income: Number(v.income) || 0, expenses: Number(v.expenses) || 0, savings: Number(v.savings) || 0 }))
+      .sort((a, b) => (a.ym < b.ym ? -1 : a.ym > b.ym ? 1 : 0));
+    return clean.slice(Math.max(0, clean.length - 24));
   }
 
   // Eigene Anteile (Prozentwerte je Person) defensiv übernehmen: nur endliche Zahlen > 0.
@@ -866,6 +882,29 @@
     });
   }
 
+  /* ---------- Verlauf: monatliche Schnappschüsse ---------- */
+  // Haushalts-Monatswerte über ALLE Personen (unabhängig vom personFilter).
+  function monthlyTotals() {
+    const income = state.einnahmen.reduce((s, e) => s + monthly(e), 0);
+    const expenses = state.zahlungen.filter((z) => z.aktiv !== false).reduce((s, z) => s + monthly(z), 0);
+    const savings = state.sparplaene.filter((sp) => sp.aktiv !== false).reduce((s, sp) => s + monthly(sp), 0);
+    return { income, expenses, savings };
+  }
+  // Aktuellen Monat als Schnappschuss festhalten (upsert), Historie auf 24 Monate begrenzen.
+  function recordSnapshot() {
+    const now = new Date();
+    const ym = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+    const r2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+    const tot = monthlyTotals();
+    const rec = { ym, income: r2(tot.income), expenses: r2(tot.expenses), savings: r2(tot.savings) };
+    if (!Array.isArray(state.verlauf)) state.verlauf = [];
+    const existing = state.verlauf.find((v) => v.ym === ym);
+    if (existing) Object.assign(existing, rec); else state.verlauf.push(rec);
+    state.verlauf.sort((a, b) => (a.ym < b.ym ? -1 : a.ym > b.ym ? 1 : 0));
+    if (state.verlauf.length > 24) state.verlauf = state.verlauf.slice(state.verlauf.length - 24);
+    save();
+  }
+
   /* ---------- Rendering: Navigation ---------- */
   function localizeChrome() {
     document.documentElement.lang = lang;
@@ -988,6 +1027,73 @@
         root.appendChild(el("div", { class: "person-cards" }, ...cards));
       }
     }
+
+    // Verlauf der letzten Monate (Haushalt)
+    renderVerlauf(root);
+  }
+
+  /* ---------- Verlauf-Diagramm (schlichtes SVG, keine Abhängigkeiten) ---------- */
+  function svgEl(tag, attrs, ...kids) {
+    const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const k in attrs) if (attrs[k] != null) n.setAttribute(k, attrs[k]);
+    for (const c of kids) if (c != null) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    return n;
+  }
+  function fmtShort(v) {
+    return new Intl.NumberFormat(locale(), { style: "currency", currency: CURRENCY, maximumFractionDigits: 0 }).format(v || 0);
+  }
+  function ymShort(ym) {
+    const [y, m] = ym.split("-").map(Number);
+    const d = new Date(y, (m || 1) - 1, 1);
+    return new Intl.DateTimeFormat(locale(), { month: "short" }).format(d) + " " + String(y).slice(2);
+  }
+  function renderVerlauf(root) {
+    root.appendChild(el("div", { class: "section-head", style: "margin-top:26px" },
+      el("div", {}, el("h2", { style: "font-size:1.05rem" }, t("trend_title")),
+        el("p", {}, t("trend_sub")))));
+    const data = (state.verlauf || []).slice(-12);
+    if (data.length < 2) {
+      root.appendChild(el("div", { class: "card" }, el("p", { class: "hint", style: "margin:0" }, t("trend_hint_build"))));
+      return;
+    }
+    root.appendChild(el("div", { class: "card" }, trendChart(data)));
+  }
+  function trendChart(data) {
+    const series = [
+      { key: "income", label: t("income"), color: "var(--primary)" },
+      { key: "expenses", label: t("fixed_costs"), color: "var(--warning)" },
+      { key: "savings", label: t("savings"), color: "var(--success)" },
+    ];
+    const W = 640, H = 240, padL = 10, padR = 62, padT = 14, padB = 26;
+    const innerW = W - padL - padR, innerH = H - padT - padB, n = data.length;
+    const maxV = Math.max(1, ...data.flatMap((d) => [d.income, d.expenses, d.savings]));
+    const x = (i) => padL + (n === 1 ? innerW / 2 : (innerW * i) / (n - 1));
+    const y = (v) => padT + innerH * (1 - v / maxV);
+
+    const grid = [];
+    for (let g = 0; g <= 2; g++) {
+      const v = (maxV * g) / 2, yy = y(v);
+      grid.push(svgEl("line", { x1: padL, y1: yy, x2: padL + innerW, y2: yy, class: "trend-grid" }));
+      grid.push(svgEl("text", { x: padL + innerW + 6, y: yy + 4, class: "trend-axis" }, fmtShort(v)));
+    }
+    const monthLabels = data.map((d, i) =>
+      svgEl("text", { x: x(i), y: H - 7, class: "trend-axis",
+        "text-anchor": i === 0 ? "start" : i === n - 1 ? "end" : "middle" }, ymShort(d.ym)));
+    const groups = series.map((s) => {
+      const pts = data.map((d, i) => x(i) + "," + y(d[s.key])).join(" ");
+      const dots = data.map((d, i) =>
+        svgEl("circle", { cx: x(i), cy: y(d[s.key]), r: 3, fill: s.color },
+          svgEl("title", {}, ymShort(d.ym) + " · " + s.label + " " + fmt(d[s.key]))));
+      return svgEl("g", {},
+        svgEl("polyline", { points: pts, fill: "none", stroke: s.color, "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round" }),
+        ...dots);
+    });
+    const svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, class: "trend-svg", role: "img", "aria-label": t("trend_title") },
+      ...grid, ...monthLabels, ...groups);
+    const legend = el("div", { class: "trend-legend" },
+      ...series.map((s) => el("span", { class: "trend-leg" },
+        el("span", { class: "trend-leg-dot", style: "background:" + s.color }), s.label)));
+    return el("div", { class: "trend-wrap" }, legend, svg);
   }
 
   // Bereich "Demnächst fällig" (Zahlungen mit Fälligkeitsdatum)
@@ -2597,6 +2703,7 @@
   $("#personFilter").addEventListener("change", (e) => { personFilter = e.target.value; render(); });
 
   applyTheme();
+  recordSnapshot(); // aktuellen Monat für den Verlauf festhalten
   buildLangToggle();
   render();
   checkForUpdate(false); // still im Hintergrund; markiert das Info-Symbol bei neuer Version

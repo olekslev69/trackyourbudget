@@ -1,6 +1,6 @@
 /* Service Worker für Sparblick (PWA) — cached die App-Shell für Offline-Betrieb.
  * Speichert KEINE Nutzerdaten; die liegen im localStorage des Geräts. */
-const CACHE = "sparblick-v0.13.0"; // pro Release erhöhen, damit neue Dateien aktiv werden
+const CACHE = "sparblick-v0.14.0"; // pro Release erhöhen, damit neue Dateien aktiv werden
 const ASSETS = [
   "./",
   "./index.html",
